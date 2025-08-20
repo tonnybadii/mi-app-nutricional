@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriPro - WebApp Nutricional</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk51dHJpUHJvIiwKICAic2hvcnRfbmFtZSI6ICJOdXRyaVBybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E0ZiIsCiAgInRoZW1lX2NvbG9yIjogIiM0Yjc2ODgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEkwSWlCb1pXbG5hSFE5SWpFeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURFeU5DQXhNalFpSUdacGJHdzlJaU5qTmprc01tWXlJajRLUEhCaGRHZ2daRDBpVFRZeUlEY3lZell3SURNdE16QWdNek11TWpOc01qTXVOVEVnTWpNdU5URk1PVFVnTmpndUpURkROamRnTmpJZ05qa3VNVGcxTFRnZ01qZ3VPREExTFRnZ015NHhPVFVnT0dneExERXpJRmd5Y2s0eVlpNHlNeUF5TXk0MWJDMHlNeTQxTVNBeU15NDFNWHBOTmpJZ01UQTBhVzQ0SWlBdlBnbzhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIxMjR4MTI0IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2d3a4f 0%, #4b7688 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2d3a4f;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #4b7688 0%, #2d3a4f 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(75, 118, 136, 0.3);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(75, 118, 136, 0.4);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #c6923f 0%, #a67c2a 100%);
+            box-shadow: 0 4px 15px rgba(198, 146, 63, 0.4);
+        }
+
+        .section {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4b7688;
+            box-shadow: 0 0 15px rgba(75, 118, 136, 0.2);
+        }
+
+        .food-results, .patient-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .food-item, .patient-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .food-item:hover, .patient-item:hover {
+            background: #f8f9fa;
+        }
+
+        .food-item:last-child, .patient-item:last-child {
+            border-bottom: none;
+        }
+
+        .calculator-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .calculator-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .selected-foods {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 200px;
+        }
+
+        .nutrition-summary {
+            background: #f0f8ff;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .food-entry {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .food-entry input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .remove-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .nutrition-table {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .nutrition-row {
+            display: contents;
+        }
+
+        .nutrition-label {
+            font-weight: 600;
+            color: #555;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .nutrition-value {
+            text-align: right;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4b7688 0%, #2d3a4f 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(75, 118, 136, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #c6923f 0%, #a67c2a 100%);
+        }
+
+        .patient-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4b7688;
+        }
+
+        .patient-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .patient-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .patient-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .consultation-history {
+            margin-top: 20px;
+        }
+
+        .consultation-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .setup-section {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .setup-steps {
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .step h3 {
+            color: #4b7688;
+            margin-bottom: 10px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #155724;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4b7688;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🥗 NutriPro</h1>
+            <p>Herramienta profesional de análisis nutricional</p>
+        </header>
+
+        <nav class="nav-buttons">
+            <button class="nav-btn active" onclick="showSection('setup')">⚙️ Configuración</button>
+            <button class="nav-btn" onclick="showSection('search')">🔍 Buscar Alimentos</button>
+            <button class="nav-btn" onclick="showSection('calculator')">🧮 Calculadora</button>
+            <button class="nav-btn" onclick="showSection('patients')">👥 Pacientes</button>
+        </nav>
+
+        <!-- Sección de Configuración -->
+        <section id="setup" class="section active">
+            <h2>📋 Configuración de Google Sheets</h2>
+            <div class="setup-section">
+                <div class="warning">
+                    <strong>⚠️ Importante:</strong> Para usar esta app necesitas configurar Google Sheets para almacenar los datos de forma segura.
+                </div>
+                
+                <div class="setup-steps">
+                    <div class="step">
+                        <h3>Paso 1: Crear Google Sheet</h3>
+                        <p>1. Ve a <strong>sheets.google.com</strong></p>
+                        <p>2. Crea una nueva hoja llamada "NutriPro-DB"</p>
+                        <p>3. Crea 3 pestañas: "Alimentos", "Pacientes", "Consultas"</p>
+                    </div>
+
+                    <div class="step">
+                        <h3>Paso 2: Configurar API</h3>
+                        <p>1. Ve a <strong>console.developers.google.com</strong></p>
+                        <p>2. Crea un proyecto nuevo</p>
+                        <p>3. Habilita "Google Sheets API"</p>
+                        <p>4. Crea credenciales (API Key)</p>
+                    </div>
+
+                    <div class="step">
+                        <h3>Paso 3: Configurar App</h3>
+                        <div class="form-group">
+                            <label>Google Sheets ID:</label>
+                            <input type="text" id="sheetId" placeholder="ID de tu Google Sheet">
+                        </div>
+                        <div class="form-group">
+                            <label>API Key:</label>
+                            <input type="text" id="apiKey" placeholder="Tu API Key de Google">
+                        </div>
+                        <button class="btn btn-primary" id="saveConfigBtn" onclick="saveConfig()">💾 Guardar Configuración</button>
+                        <button class="btn" id="testConnectionBtn" onclick="testConnection()">🔗 Probar Conexión</button>
+                    </div>
+                </div>
+
+                <div id="connectionStatus"></div>
+            </div>
+        </section>
+
+        <!-- Sección de Búsqueda de Alimentos -->
+        <section id="search" class="section">
+            <h2>🔍 Base de Datos de Alimentos</h2>
+            
+            <div class="search-container">
+                <input type="text" id="foodSearch" class="search-input" placeholder="Buscar alimento (ej: brócoli, acelga...)">
+                <div id="foodResults" class="food-results" style="display: none;"></div>
+            </div>
+
+            <div id="selectedFood" style="display: none;">
+                <h3>Información Nutricional (por 100g):</h3>
+                <div id="nutritionInfo" class="nutrition-table"></div>
+                <button class="btn btn-primary" onclick="addToCalculator()">➕ Agregar a Calculadora</button>
+            </div>
+
+            <div class="warning">
+                <strong>💡 Tip:</strong> Empieza agregando algunos alimentos desde la configuración para poder buscarlos aquí.
+            </div>
+        </section>
+
+        <!-- Sección de Calculadora -->
+        <section id="calculator" class="section">
+            <h2>🧮 Calculadora Nutricional</h2>
+            
+            <div class="calculator-section">
+                <div class="selected-foods">
+                    <h3>🍽️ Alimentos Seleccionados</h3>
+                    <div id="selectedFoodsList">
+                        <p style="text-align: center; color: #666; margin: 40px 0;">
+                            Agrega alimentos desde la sección "Buscar Alimentos"
+                        </p>
+                    </div>
+                    <button class="btn" onclick="clearCalculator()">🗑️ Limpiar Todo</button>
+                    <button class="btn btn-primary" onclick="saveCalculation()">💾 Guardar Cálculo</button>
+                </div>
+
+                <div class="nutrition-summary">
+                    <h3>📊 Resumen Nutricional Total</h3>
+                    <div id="totalNutrition" class="nutrition-table"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de Pacientes -->
+        <section id="patients" class="section">
+            <h2>👥 Base de Datos de Pacientes</h2>
+            
+            <div class="search-container">
+                <input type="text" id="patientSearch" class="search-input" placeholder="Buscar paciente por nombre...">
+            </div>
+
+            <button class="btn btn-primary" onclick="showNewPatientForm()">➕ Nuevo Paciente</button>
+
+            <div id="newPatientForm" style="display: none; margin-top: 20px;">
+                <h3>📝 Datos del Nuevo Paciente</h3>
+                <form class="patient-form">
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" id="patientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Edad</label>
+                        <input type="number" id="patientAge">
+                    </div>
+                    <div class="form-group">
+                        <label>Género</label>
+                        <select id="patientGender">
+                            <option value="">Seleccionar</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Peso (kg)</label>
+                        <input type="number" id="patientWeight" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Estatura (cm)</label>
+                        <input type="number" id="patientHeight" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Padecimientos</label>
+                        <textarea id="patientConditions" rows="3" placeholder="Diabetes, hipertensión, alergias, etc."></textarea>
+                    </div>
+                </form>
+                <button class="btn btn-primary" onclick="savePatient()">💾 Guardar Paciente</button>
+                <button class="btn" onclick="cancelNewPatient()">❌ Cancelar</button>
+            </div>
+
+            <div id="patientsList"></div>
+        </section>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Cargando datos...</p>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let sheetsConfig = {
+            apiKey: '',
+            sheetId: '',
+            isConfigured: false
+        };
+
+        let currentFoods = [];
+        let selectedFoods = [];
+        let patients = [];
+        let currentPatient = null;
+
+        // Funciones globales para configuración (deben estar en scope global)
+
+
+        // Funciones globales para navegación
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(sectionName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function selectFood(foodName) {
+            const food = currentFoods.find(f => f.name === foodName);
+            if (!food) return;
+            
+            document.getElementById('foodSearch').value = foodName;
+            document.getElementById('foodResults').style.display = 'none';
+            
+            const nutritionInfo = document.getElementById('nutritionInfo');
+            nutritionInfo.innerHTML = `
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Energía (kcal)</div>
+                    <div class="nutrition-value">${food.energia}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Proteína (g)</div>
+                    <div class="nutrition-value">${food.proteina}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Lípidos (g)</div>
+                    <div class="nutrition-value">${food.lipidos}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hidratos de Carbono (g)</div>
+                    <div class="nutrition-value">${food.hidratosCarbono}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fibra (g)</div>
+                    <div class="nutrition-value">${food.fibra}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Vitamina A (μg RE)</div>
+                    <div class="nutrition-value">${food.vitaminaA}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ácido Ascórbico (mg)</div>
+                    <div class="nutrition-value">${food.acidoAscorbico}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ácido Fólico (μg)</div>
+                    <div class="nutrition-value">${food.acidoFolico}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Calcio (mg)</div>
+                    <div class="nutrition-value">${food.calcio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hierro (mg)</div>
+                    <div class="nutrition-value">${food.hierro}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Potasio (mg)</div>
+                    <div class="nutrition-value">${food.potasio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Sodio (mg)</div>
+                    <div class="nutrition-value">${food.sodio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fósforo (mg)</div>
+                    <div class="nutrition-value">${food.fosforo}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Azúcar (g)</div>
+                    <div class="nutrition-value">${food.azucar}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Colesterol (mg)</div>
+                    <div class="nutrition-value">${food.colesterol}</div>
+                </div>
+            `;
+            
+            document.getElementById('selectedFood').style.display = 'block';
+            window.currentSelectedFood = food;
+        }
+
+        function addToCalculator() {
+            if (!window.currentSelectedFood) return;
+            
+            const food = window.currentSelectedFood;
+            const foodEntry = {
+                ...food,
+                grams: 100,
+                id: Date.now()
+            };
+            
+            selectedFoods.push(foodEntry);
+            updateCalculatorDisplay();
+            
+            alert(`${food.name} agregado a la calculadora`);
+        }
+
+        function updateFoodGrams(foodId, newGrams) {
+            const food = selectedFoods.find(f => f.id === foodId);
+            if (food) {
+                food.grams = parseFloat(newGrams) || 0;
+                updateNutritionSummary();
+            }
+        }
+
+        function removeFoodFromCalculator(foodId) {
+            selectedFoods = selectedFoods.filter(f => f.id !== foodId);
+            updateCalculatorDisplay();
+        }
+
+        function clearCalculator() {
+            selectedFoods = [];
+            updateCalculatorDisplay();
+        }
+
+        function saveCalculation() {
+            if (selectedFoods.length === 0) {
+                alert('Agrega al menos un alimento antes de guardar');
+                return;
+            }
+            
+            const patientName = prompt('¿Para qué paciente es este cálculo?');
+            if (!patientName) return;
+            
+            const calculation = {
+                id: Date.now(),
+                patientName: patientName,
+                date: new Date().toLocaleDateString('es-MX'),
+                foods: [...selectedFoods],
+                timestamp: new Date().toISOString()
+            };
+            
+            let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            calculations.push(calculation);
+            localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+            
+            alert(`Cálculo guardado para ${patientName}`);
+        }
+
+        function showNewPatientForm() {
+            document.getElementById('newPatientForm').style.display = 'block';
+        }
+
+        function cancelNewPatient() {
+            document.getElementById('newPatientForm').style.display = 'none';
+            clearPatientForm();
+        }
+
+        function savePatient() {
+            const name = document.getElementById('patientName').value.trim();
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+            
+            const patient = {
+                id: Date.now(),
+                name: name,
+                age: parseInt(document.getElementById('patientAge').value) || null,
+                gender: document.getElementById('patientGender').value || null,
+                weight: parseFloat(document.getElementById('patientWeight').value) || null,
+                height: parseFloat(document.getElementById('patientHeight').value) || null,
+                conditions: document.getElementById('patientConditions').value.trim() || null,
+                createdAt: new Date().toISOString(),
+                consultations: []
+            };
+            
+            patients.push(patient);
+            localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+            
+            cancelNewPatient();
+            displayPatients();
+            
+            alert(`Paciente ${name} agregado correctamente`);
+        }
+
+        function viewPatientDetail(patientId) {
+            const patient = patients.find(p => p.id === patientId);
+            if (!patient) return;
+            
+            const calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            const patientConsultations = calculations.filter(calc => 
+                calc.patientName.toLowerCase() === patient.name.toLowerCase()
+            );
+            
+            const consultationHistory = patientConsultations.length > 0 ? 
+                patientConsultations.map(consultation => `
+                    <div class="consultation-item">
+                        <strong>Fecha:</strong> ${consultation.date}<br>
+                        <strong>Alimentos:</strong> ${consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ')}
+                    </div>
+                `).join('') : '<p>No hay consultas registradas</p>';
+            
+            const detailHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                        <h2>👤 ${patient.name}</h2>
+                        <div class="patient-info">
+                            <div class="info-item">
+                                <div class="info-label">Edad</div>
+                                <div class="info-value">${patient.age || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Género</div>
+                                <div class="info-value">${patient.gender || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Peso</div>
+                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Estatura</div>
+                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
+                            </div>
+                        </div>
+                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
+                        
+                        <div class="consultation-history">
+                            <h3>📋 Historial de Consultas</h3>
+                            ${consultationHistory}
+                        </div>
+                        
+                        <button class="btn" onclick="closePatientDetail()">❌ Cerrar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', detailHTML);
+        }
+
+        function closePatientDetail() {
+            const modal = document.querySelector('div[style*="position: fixed"]');
+            if (modal) modal.remove();
+        }
+
+        // Base de datos inicial de alimentos (del SMAE)
+        const initialFoods = [
+            {
+                name: "Acelga cocida",
+                energia: 19, proteina: 1.9, lipidos: 0.1, hidratosCarbono: 3.9, fibra: 2.1,
+                vitaminaA: 275.8, acidoAscorbico: 17.9, acidoFolico: 10.1, calcio: 62.1,
+                hierro: 1.4, potasio: 645.1, sodio: 35.0, fosforo: 29.0, azucar: 64.0,
+                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.0,
+                etanol: 0.0, orgaGlicemica: 0
+            },
+            {
+                name: "Acelga cruda",
+                energia: 22, proteina: 2.2, lipidos: 0.1, hidratosCarbono: 4.3, fibra: 3.6,
+                vitaminaA: 310.9, acidoAscorbico: 25.5, acidoFolico: 14.8, calcio: 115.2,
+                hierro: 2.5, potasio: 649.2, sodio: 24.0, fosforo: 40.3, azucar: 64.0,
+                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.0,
+                etanol: 0.0, orgaGlicemica: 0
+            },
+            {
+                name: "Brócoli cocido",
+                energia: 26, proteina: 2.7, lipidos: 0.3, hidratosCarbono: 4.6, fibra: 2.7,
+                vitaminaA: 127.4, acidoAscorbico: 68.4, acidoFolico: 60.3, calcio: 42.5,
+                hierro: 0.8, potasio: 268.9, sodio: 236, fosforo: 54.9, azucar: 92,
+                colesterol: 0.0, agSaturados: 0.1, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
+                etanol: 0.0, orgaGlicemica: 0
+            },
+            {
+                name: "Brócoli crudo",
+                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
+                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
+                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
+                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
+                etanol: 0.0, orgaGlicemica: 0
+            }
+        ];
+
+        // Inicializar la app
+        function initApp() {
+            loadConfig();
+            loadInitialFoods();
+            setupEventListeners();
+            updateCalculatorDisplay();
+            loadPatients();
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            const foodSearch = document.getElementById('foodSearch');
+            if (foodSearch) {
+                foodSearch.addEventListener('input', function(e) {
+                    searchFoods(e.target.value);
+                });
+            }
+
+            const patientSearch = document.getElementById('patientSearch');
+            if (patientSearch) {
+                patientSearch.addEventListener('input', function(e) {
+                    searchPatients(e.target.value);
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                const foodResults = document.getElementById('foodResults');
+                if (foodResults && !e.target.closest('.search-container')) {
+                    foodResults.style.display = 'none';
+                }
+            });
+        }
+
+        // Funciones de configuración
+        function loadConfig() {
+            const saved = localStorage.getItem('nutripro-config');
+            if (saved) {
+                sheetsConfig = JSON.parse(saved);
+                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
+                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
+                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
+                    sheetsConfig.isConfigured = true;
+                }
+            }
+        }
+
+        // Funciones de alimentos
+        function loadInitialFoods() {
+            const saved = localStorage.getItem('nutripro-foods');
+            if (saved) {
+                currentFoods = JSON.parse(saved);
+            } else {
+                currentFoods = [...initialFoods];
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+            }
+        }
+
+        function searchFoods(query) {
+            const results = document.getElementById('foodResults');
+            
+            if (query.length < 2) {
+                results.style.display = 'none';
+                return;
+            }
+            
+            const filtered = currentFoods.filter(food => 
+                food.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length > 0) {
+                results.innerHTML = filtered.map(food => 
+                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
+                ).join('');
+                results.style.display = 'block';
+            } else {
+                results.innerHTML = '<div class="food-item">No se encontraron alimentos</div>';
+                results.style.display = 'block';
+            }
+        }
+
+        // Funciones de calculadora
+        function updateCalculatorDisplay() {
+            const container = document.getElementById('selectedFoodsList');
+            
+            if (selectedFoods.length === 0) {
+                container.innerHTML = `
+                    <p style="text-align: center; color: #666; margin: 40px 0;">
+                        Agrega alimentos desde la sección "Buscar Alimentos"
+                    </p>
+                `;
+            } else {
+                container.innerHTML = selectedFoods.map(food => `
+                    <div class="food-entry">
+                        <div style="flex: 1;">
+                            <strong>${food.name}</strong>
+                        </div>
+                        <input type="number" value="${food.grams}" min="1" 
+                               onchange="updateFoodGrams(${food.id}, this.value)"
+                               style="margin-left: 10px;">
+                        <span style="margin-left: 5px;">g</span>
+                        <button class="remove-btn" onclick="removeFoodFromCalculator(${food.id})">×</button>
+                    </div>
+                `).join('');
+            }
+            
+            updateNutritionSummary();
+        }
+
+        function updateNutritionSummary() {
+            const summary = document.getElementById('totalNutrition');
+            
+            if (selectedFoods.length === 0) {
+                summary.innerHTML = '<p style="text-align: center; color: #666;">Selecciona alimentos para ver el resumen nutricional</p>';
+                return;
+            }
+            
+            const totals = selectedFoods.reduce((acc, food) => {
+                const factor = food.grams / 100;
+                
+                acc.energia += (food.energia * factor);
+                acc.proteina += (food.proteina * factor);
+                acc.lipidos += (food.lipidos * factor);
+                acc.hidratosCarbono += (food.hidratosCarbono * factor);
+                acc.fibra += (food.fibra * factor);
+                acc.vitaminaA += (food.vitaminaA * factor);
+                acc.acidoAscorbico += (food.acidoAscorbico * factor);
+                acc.acidoFolico += (food.acidoFolico * factor);
+                acc.calcio += (food.calcio * factor);
+                acc.hierro += (food.hierro * factor);
+                acc.potasio += (food.potasio * factor);
+                acc.sodio += (food.sodio * factor);
+                acc.fosforo += (food.fosforo * factor);
+                acc.azucar += (food.azucar * factor);
+                acc.colesterol += (food.colesterol * factor);
+                
+                return acc;
+            }, {
+                energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0, fibra: 0,
+                vitaminaA: 0, acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
+                potasio: 0, sodio: 0, fosforo: 0, azucar: 0, colesterol: 0
+            });
+            
+            summary.innerHTML = `
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Energía Total (kcal)</div>
+                    <div class="nutrition-value">${totals.energia.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Proteína Total (g)</div>
+                    <div class="nutrition-value">${totals.proteina.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Lípidos Total (g)</div>
+                    <div class="nutrition-value">${totals.lipidos.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Carbohidratos Total (g)</div>
+                    <div class="nutrition-value">${totals.hidratosCarbono.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fibra Total (g)</div>
+                    <div class="nutrition-value">${totals.fibra.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Vitamina A Total (μg)</div>
+                    <div class="nutrition-value">${totals.vitaminaA.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ác. Ascórbico Total (mg)</div>
+                    <div class="nutrition-value">${totals.acidoAscorbico.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ác. Fólico Total (μg)</div>
+                    <div class="nutrition-value">${totals.acidoFolico.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Calcio Total (mg)</div>
+                    <div class="nutrition-value">${totals.calcio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hierro Total (mg)</div>
+                    <div class="nutrition-value">${totals.hierro.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Potasio Total (mg)</div>
+                    <div class="nutrition-value">${totals.potasio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Sodio Total (mg)</div>
+                    <div class="nutrition-value">${totals.sodio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fósforo Total (mg)</div>
+                    <div class="nutrition-value">${totals.fosforo.toFixed(1)}</div>
+                </div>
+            `;
+        }
+
+        // Funciones de pacientes
+        function loadPatients() {
+            const saved = localStorage.getItem('nutripro-patients');
+            if (saved) {
+                patients = JSON.parse(saved);
+                displayPatients();
+            }
+        }
+
+        function clearPatientForm() {
+            document.getElementById('patientName').value = '';
+            document.getElementById('patientAge').value = '';
+            document.getElementById('patientGender').value = '';
+            document.getElementById('patientWeight').value = '';
+            document.getElementById('patientHeight').value = '';
+            document.getElementById('patientConditions').value = '';
+        }
+
+        function searchPatients(query) {
+            if (query.length < 2) {
+                displayPatients();
+                return;
+            }
+            
+            const filtered = patients.filter(patient => 
+                patient.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            displayPatients(filtered);
+        }
+
+        function displayPatients(patientsToShow = patients) {
+            const container = document.getElementById('patientsList');
+            
+            if (patientsToShow.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; margin: 40px 0;">No se encontraron pacientes</p>';
+                return;
+            }
+            
+            const sortedPatients = patientsToShow.sort((a, b) => a.name.localeCompare(b.name));
+            
+            container.innerHTML = sortedPatients.map(patient => {
+                const bmi = patient.weight && patient.height ? 
+                    (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1) : 'N/A';
+                
+                return `
+                    <div class="patient-card" onclick="viewPatientDetail(${patient.id})">
+                        <h3>${patient.name}</h3>
+                        <div class="patient-info">
+                            <div class="info-item">
+                                <div class="info-label">Edad</div>
+                                <div class="info-value">${patient.age || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Género</div>
+                                <div class="info-value">${patient.gender || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Peso</div>
+                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Estatura</div>
+                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">IMC</div>
+                                <div class="info-value">${bmi}</div>
+                            </div>
+                        </div>
+                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Funciones auxiliares
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+
+        // Inicializar la aplicación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', initApp);: 54.9, azucar: 92,
+                colesterol: 0.0, agSaturados: 0.1, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
+                etanol: 0.0, orgaGlicemica: 0
+            },
+            {
+                name: "Brócoli crudo",
+                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
+                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
+                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
+                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
+                etanol: 0.0, orgaGlicemica: 0
+            }
+        ];
+
+        // Inicializar la app
+        function initApp() {
+            loadConfig();
+            loadInitialFoods();
+            setupEventListeners();
+            updateCalculatorDisplay();
+            loadPatients();
+        }
+
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Búsqueda de alimentos
+            document.getElementById('foodSearch').addEventListener('input', function(e) {
+                searchFoods(e.target.value);
+            });
+
+            // Búsqueda de pacientes
+            document.getElementById('patientSearch').addEventListener('input', function(e) {
+                searchPatients(e.target.value);
+            });
+
+            // Ocultar resultados al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    document.getElementById('foodResults').style.display = 'none';
+            
+            // Mostrar información nutricional
+            const nutritionInfo = document.getElementById('nutritionInfo');
+            nutritionInfo.innerHTML = `
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Energía (kcal)</div>
+                    <div class="nutrition-value">${food.energia}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Proteína (g)</div>
+                    <div class="nutrition-value">${food.proteina}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Lípidos (g)</div>
+                    <div class="nutrition-value">${food.lipidos}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hidratos de Carbono (g)</div>
+                    <div class="nutrition-value">${food.hidratosCarbono}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fibra (g)</div>
+                    <div class="nutrition-value">${food.fibra}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Vitamina A (μg RE)</div>
+                    <div class="nutrition-value">${food.vitaminaA}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ácido Ascórbico (mg)</div>
+                    <div class="nutrition-value">${food.acidoAscorbico}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ácido Fólico (μg)</div>
+                    <div class="nutrition-value">${food.acidoFolico}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Calcio (mg)</div>
+                    <div class="nutrition-value">${food.calcio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hierro (mg)</div>
+                    <div class="nutrition-value">${food.hierro}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Potasio (mg)</div>
+                    <div class="nutrition-value">${food.potasio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Sodio (mg)</div>
+                    <div class="nutrition-value">${food.sodio}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fósforo (mg)</div>
+                    <div class="nutrition-value">${food.fosforo}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Azúcar (g)</div>
+                    <div class="nutrition-value">${food.azucar}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Colesterol (mg)</div>
+                    <div class="nutrition-value">${food.colesterol}</div>
+                </div>
+            `;
+            
+            document.getElementById('selectedFood').style.display = 'block';
+            window.currentSelectedFood = food;
+        }
+
+        function addToCalculator() {
+            if (!window.currentSelectedFood) return;
+            
+            const food = window.currentSelectedFood;
+            const foodEntry = {
+                ...food,
+                grams: 100,
+                id: Date.now()
+            };
+            
+            selectedFoods.push(foodEntry);
+            updateCalculatorDisplay();
+            
+            // Mostrar mensaje de confirmación
+            alert(`${food.name} agregado a la calculadora`);
+        }
+
+        // Funciones de calculadora
+        function updateCalculatorDisplay() {
+            const container = document.getElementById('selectedFoodsList');
+            
+            if (selectedFoods.length === 0) {
+                container.innerHTML = `
+                    <p style="text-align: center; color: #666; margin: 40px 0;">
+                        Agrega alimentos desde la sección "Buscar Alimentos"
+                    </p>
+                `;
+            } else {
+                container.innerHTML = selectedFoods.map(food => `
+                    <div class="food-entry">
+                        <div style="flex: 1;">
+                            <strong>${food.name}</strong>
+                        </div>
+                        <input type="number" value="${food.grams}" min="1" 
+                               onchange="updateFoodGrams(${food.id}, this.value)"
+                               style="margin-left: 10px;">
+                        <span style="margin-left: 5px;">g</span>
+                        <button class="remove-btn" onclick="removeFoodFromCalculator(${food.id})">×</button>
+                    </div>
+                `).join('');
+            }
+            
+            updateNutritionSummary();
+        }
+
+        function updateFoodGrams(foodId, newGrams) {
+            const food = selectedFoods.find(f => f.id === foodId);
+            if (food) {
+                food.grams = parseFloat(newGrams) || 0;
+                updateNutritionSummary();
+            }
+        }
+
+        function removeFoodFromCalculator(foodId) {
+            selectedFoods = selectedFoods.filter(f => f.id !== foodId);
+            updateCalculatorDisplay();
+        }
+
+        function clearCalculator() {
+            selectedFoods = [];
+            updateCalculatorDisplay();
+        }
+
+        function updateNutritionSummary() {
+            const summary = document.getElementById('totalNutrition');
+            
+            if (selectedFoods.length === 0) {
+                summary.innerHTML = '<p style="text-align: center; color: #666;">Selecciona alimentos para ver el resumen nutricional</p>';
+                return;
+            }
+            
+            const totals = selectedFoods.reduce((acc, food) => {
+                const factor = food.grams / 100; // Factor de conversión desde 100g
+                
+                acc.energia += (food.energia * factor);
+                acc.proteina += (food.proteina * factor);
+                acc.lipidos += (food.lipidos * factor);
+                acc.hidratosCarbono += (food.hidratosCarbono * factor);
+                acc.fibra += (food.fibra * factor);
+                acc.vitaminaA += (food.vitaminaA * factor);
+                acc.acidoAscorbico += (food.acidoAscorbico * factor);
+                acc.acidoFolico += (food.acidoFolico * factor);
+                acc.calcio += (food.calcio * factor);
+                acc.hierro += (food.hierro * factor);
+                acc.potasio += (food.potasio * factor);
+                acc.sodio += (food.sodio * factor);
+                acc.fosforo += (food.fosforo * factor);
+                acc.azucar += (food.azucar * factor);
+                acc.colesterol += (food.colesterol * factor);
+                
+                return acc;
+            }, {
+                energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0, fibra: 0,
+                vitaminaA: 0, acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
+                potasio: 0, sodio: 0, fosforo: 0, azucar: 0, colesterol: 0
+            });
+            
+            summary.innerHTML = `
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Energía Total (kcal)</div>
+                    <div class="nutrition-value">${totals.energia.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Proteína Total (g)</div>
+                    <div class="nutrition-value">${totals.proteina.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Lípidos Total (g)</div>
+                    <div class="nutrition-value">${totals.lipidos.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Carbohidratos Total (g)</div>
+                    <div class="nutrition-value">${totals.hidratosCarbono.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fibra Total (g)</div>
+                    <div class="nutrition-value">${totals.fibra.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Vitamina A Total (μg)</div>
+                    <div class="nutrition-value">${totals.vitaminaA.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ác. Ascórbico Total (mg)</div>
+                    <div class="nutrition-value">${totals.acidoAscorbico.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Ác. Fólico Total (μg)</div>
+                    <div class="nutrition-value">${totals.acidoFolico.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Calcio Total (mg)</div>
+                    <div class="nutrition-value">${totals.calcio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Hierro Total (mg)</div>
+                    <div class="nutrition-value">${totals.hierro.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Potasio Total (mg)</div>
+                    <div class="nutrition-value">${totals.potasio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Sodio Total (mg)</div>
+                    <div class="nutrition-value">${totals.sodio.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Fósforo Total (mg)</div>
+                    <div class="nutrition-value">${totals.fosforo.toFixed(1)}</div>
+                </div>
+            `;
+        }
+
+        function saveCalculation() {
+            if (selectedFoods.length === 0) {
+                alert('Agrega al menos un alimento antes de guardar');
+                return;
+            }
+            
+            const patientName = prompt('¿Para qué paciente es este cálculo?');
+            if (!patientName) return;
+            
+            const calculation = {
+                id: Date.now(),
+                patientName: patientName,
+                date: new Date().toLocaleDateString('es-MX'),
+                foods: [...selectedFoods],
+                timestamp: new Date().toISOString()
+            };
+            
+            // Guardar en localStorage (después se sincronizará con Google Sheets)
+            let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            calculations.push(calculation);
+            localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+            
+            alert(`Cálculo guardado para ${patientName}`);
+        }
+
+        // Funciones de pacientes
+        function loadPatients() {
+            const saved = localStorage.getItem('nutripro-patients');
+            if (saved) {
+                patients = JSON.parse(saved);
+                displayPatients();
+            }
+        }
+
+        function showNewPatientForm() {
+            document.getElementById('newPatientForm').style.display = 'block';
+        }
+
+        function cancelNewPatient() {
+            document.getElementById('newPatientForm').style.display = 'none';
+            clearPatientForm();
+        }
+
+        function clearPatientForm() {
+            document.getElementById('patientName').value = '';
+            document.getElementById('patientAge').value = '';
+            document.getElementById('patientGender').value = '';
+            document.getElementById('patientWeight').value = '';
+            document.getElementById('patientHeight').value = '';
+            document.getElementById('patientConditions').value = '';
+        }
+
+        function savePatient() {
+            const name = document.getElementById('patientName').value.trim();
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+            
+            const patient = {
+                id: Date.now(),
+                name: name,
+                age: parseInt(document.getElementById('patientAge').value) || null,
+                gender: document.getElementById('patientGender').value || null,
+                weight: parseFloat(document.getElementById('patientWeight').value) || null,
+                height: parseFloat(document.getElementById('patientHeight').value) || null,
+                conditions: document.getElementById('patientConditions').value.trim() || null,
+                createdAt: new Date().toISOString(),
+                consultations: []
+            };
+            
+            patients.push(patient);
+            localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+            
+            cancelNewPatient();
+            displayPatients();
+            
+            alert(`Paciente ${name} agregado correctamente`);
+        }
+
+        function searchPatients(query) {
+            if (query.length < 2) {
+                displayPatients();
+                return;
+            }
+            
+            const filtered = patients.filter(patient => 
+                patient.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            displayPatients(filtered);
+        }
+
+        function displayPatients(patientsToShow = patients) {
+            const container = document.getElementById('patientsList');
+            
+            if (patientsToShow.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; margin: 40px 0;">No se encontraron pacientes</p>';
+                return;
+            }
+            
+            // Ordenar alfabéticamente
+            const sortedPatients = patientsToShow.sort((a, b) => a.name.localeCompare(b.name));
+            
+            container.innerHTML = sortedPatients.map(patient => {
+                const bmi = patient.weight && patient.height ? 
+                    (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1) : 'N/A';
+                
+                return `
+                    <div class="patient-card" onclick="viewPatientDetail(${patient.id})">
+                        <h3>${patient.name}</h3>
+                        <div class="patient-info">
+                            <div class="info-item">
+                                <div class="info-label">Edad</div>
+                                <div class="info-value">${patient.age || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Género</div>
+                                <div class="info-value">${patient.gender || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Peso</div>
+                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Estatura</div>
+                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">IMC</div>
+                                <div class="info-value">${bmi}</div>
+                            </div>
+                        </div>
+                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function viewPatientDetail(patientId) {
+            const patient = patients.find(p => p.id === patientId);
+            if (!patient) return;
+            
+            // Obtener consultas de este paciente
+            const calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            const patientConsultations = calculations.filter(calc => 
+                calc.patientName.toLowerCase() === patient.name.toLowerCase()
+            );
+            
+            const consultationHistory = patientConsultations.length > 0 ? 
+                patientConsultations.map(consultation => `
+                    <div class="consultation-item">
+                        <strong>Fecha:</strong> ${consultation.date}<br>
+                        <strong>Alimentos:</strong> ${consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ')}
+                    </div>
+                `).join('') : '<p>No hay consultas registradas</p>';
+            
+            const detailHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                        <h2>👤 ${patient.name}</h2>
+                        <div class="patient-info">
+                            <div class="info-item">
+                                <div class="info-label">Edad</div>
+                                <div class="info-value">${patient.age || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Género</div>
+                                <div class="info-value">${patient.gender || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Peso</div>
+                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Estatura</div>
+                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
+                            </div>
+                        </div>
+                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
+                        
+                        <div class="consultation-history">
+                            <h3>📋 Historial de Consultas</h3>
+                            ${consultationHistory}
+                        </div>
+                        
+                        <button class="btn" onclick="closePatientDetail()">❌ Cerrar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', detailHTML);
+        }
+
+        function closePatientDetail() {
+            const modal = document.querySelector('div[style*="position: fixed"]');
+            if (modal) modal.remove();
+        }
+
+        // Funciones auxiliares
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+
+        // Inicializar la aplicación cuando se carga la página
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>';
+                }
+            });
+        }
+
+        // Funciones de navegación
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remover clase active de todos los botones
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar sección seleccionada
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Activar botón correspondiente
+            event.target.classList.add('active');
+        }
+
+        // Funciones de configuración
+        function loadConfig() {
+            const saved = localStorage.getItem('nutripro-config');
+            if (saved) {
+                sheetsConfig = JSON.parse(saved);
+                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
+                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
+                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
+                    sheetsConfig.isConfigured = true;
+                }
+            }
+        }
+
+        function saveConfig() {
+            console.log('saveConfig called'); // Debug
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const sheetId = document.getElementById('sheetId').value.trim();
+            
+            console.log('API Key:', apiKey ? 'presente' : 'vacío'); // Debug
+            console.log('Sheet ID:', sheetId ? 'presente' : 'vacío'); // Debug
+            
+            if (!apiKey || !sheetId) {
+                alert('Por favor completa ambos campos');
+                return;
+            }
+            
+            sheetsConfig = {
+                apiKey: apiKey,
+                sheetId: sheetId,
+                isConfigured: true
+            };
+            
+            localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
+            
+            document.getElementById('connectionStatus').innerHTML = 
+                '<div class="success">✅ Configuración guardada correctamente</div>';
+            
+            console.log('Configuración guardada'); // Debug
+        }
+
+        function testConnection() {
+            console.log('testConnection called'); // Debug
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero guarda la configuración');
+                return;
+            }
+            
+            showLoading(true);
+            
+            // Simular prueba de conexión
+            setTimeout(() => {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
+            }, 2000);
+        }
+
+        // Funciones de alimentos
+        function loadInitialFoods() {
+            const saved = localStorage.getItem('nutripro-foods');
+            if (saved) {
+                currentFoods = JSON.parse(saved);
+            } else {
+                currentFoods = [...initialFoods];
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+            }
+        }
+
+        function searchFoods(query) {
+            const results = document.getElementById('foodResults');
+            
+            if (query.length < 2) {
+                results.style.display = 'none';
+                return;
+            }
+            
+            const filtered = currentFoods.filter(food => 
+                food.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length > 0) {
+                results.innerHTML = filtered.map(food => 
+                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
+                ).join('');
+                results.style.display = 'block';
+            } else {
+                results.innerHTML = '<div class="food-item">No se encontraron alimentos</div>';
+                results.style.display = 'block';
+            }
+        }
+
+        function selectFood(foodName) {
+            const food = currentFoods.find(f => f.name === foodName);
+            if (!food) return;
+            
+            document.getElementById('foodSearch').value = foodName;
+            document.getElementById('foodResults').style.display = 'none
