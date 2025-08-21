@@ -907,14 +907,36 @@
                 const saved = localStorage.getItem('nutripro-config');
                 if (saved) {
                     sheetsConfig = JSON.parse(saved);
+                    
+                    // Verificar que tenemos los datos necesarios
                     if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
                         document.getElementById('apiKey').value = sheetsConfig.apiKey;
                         document.getElementById('sheetId').value = sheetsConfig.sheetId;
                         sheetsConfig.isConfigured = true;
+                        
+                        // Mostrar mensaje de configuración cargada
+                        setTimeout(() => {
+                            document.getElementById('connectionStatus').innerHTML = 
+                                '<div class="success">✅ Configuración cargada desde almacenamiento local</div>';
+                        }, 500);
+                    } else {
+                        sheetsConfig.isConfigured = false;
                     }
+                } else {
+                    // Primera vez - mostrar mensaje informativo
+                    setTimeout(() => {
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="warning">⚠️ Primera vez usando la app. Configura tu Google Sheets para sincronizar datos.</div>';
+                    }, 500);
                 }
             } catch (error) {
                 console.error('Error loading config:', error);
+                sheetsConfig.isConfigured = false;
+                
+                setTimeout(() => {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="error">❌ Error cargando configuración. Por favor configura nuevamente.</div>';
+                }, 500);
             }
         }
 
@@ -1177,13 +1199,13 @@
             await appendToSheet('Consultas', [headers]);
         }
 
-        // Función genérica para agregar datos a Google Sheets
+        // Función genérica para agregar datos a Google Sheets - MEJORADA
         async function appendToSheet(sheetName, values) {
             if (!sheetsConfig.isConfigured) {
                 throw new Error('Google Sheets no está configurado');
             }
 
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}:append?valueInputOption=RAW&key=${sheetsConfig.apiKey}`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}!A:A/append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${sheetsConfig.apiKey}`;
             
             const response = await fetch(url, {
                 method: 'POST',
@@ -1196,11 +1218,14 @@
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error?.message || 'Error al guardar en Google Sheets');
+                const errorData = await response.json();
+                console.error('Google Sheets API Error:', errorData);
+                throw new Error(errorData.error?.message || `Error HTTP ${response.status}: ${response.statusText}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log('Datos guardados en Google Sheets:', result);
+            return result;
         }
 
         // Funciones de alimentos
@@ -1554,8 +1579,10 @@
                 if (sheetsConfig.isConfigured) {
                     try {
                         await savePatientToSheets(newPatient);
+                        console.log('Nuevo paciente sincronizado con Google Sheets');
                     } catch (error) {
-                        console.error('Error saving patient to sheets:', error);
+                        console.error('Error saving new patient to sheets:', error);
+                        // No mostramos error aquí porque el guardado local funcionó
                     }
                 }
 
@@ -1602,6 +1629,7 @@
                 let consultations = JSON.parse(localStorage.getItem('nutripro-consultations') || '[]');
                 consultations.push(consultation);
                 localStorage.setItem('nutripro-consultations', JSON.stringify(consultations));
+                console.log('Consulta guardada localmente');
             } catch (error) {
                 console.error('Error saving consultation locally:', error);
             }
@@ -1610,9 +1638,10 @@
             if (sheetsConfig.isConfigured) {
                 try {
                     await saveConsultationToSheets(consultation);
+                    console.log('Consulta sincronizada con Google Sheets');
                 } catch (error) {
                     console.error('Error saving consultation to sheets:', error);
-                    alert('Cálculo guardado localmente, pero hubo un error al sincronizar con Google Sheets');
+                    // Continuamos sin mostrar error porque el guardado local funcionó
                 }
             }
 
@@ -1633,9 +1662,32 @@
             selectedPatientForCalculation = null;
         }
 
-        // Guardar consulta en Google Sheets
+        // Guardar consulta en Google Sheets - MEJORADA
         async function saveConsultationToSheets(consultation) {
+            if (!sheetsConfig.isConfigured) {
+                console.log('Google Sheets no configurado, guardando solo localmente');
+                return;
+            }
+
             try {
+                // Verificar si la hoja Consultas tiene headers
+                const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Consultas!1:1?key=${sheetsConfig.apiKey}`;
+                const checkResponse = await fetch(checkUrl);
+                
+                if (!checkResponse.ok) {
+                    throw new Error(`Error verificando headers: ${checkResponse.status}`);
+                }
+                
+                const checkData = await checkResponse.json();
+                
+                // Si no hay headers, crearlos
+                if (!checkData.values || checkData.values.length === 0) {
+                    const headers = Object.keys(CONSULTATION_HEADERS);
+                    await appendToSheet('Consultas', [headers]);
+                    console.log('Headers de Consultas creados en Google Sheets');
+                }
+
+                // Ahora agregar la consulta
                 const row = [
                     consultation.id,
                     consultation.patientName,
@@ -1651,9 +1703,11 @@
                 ];
 
                 await appendToSheet('Consultas', [row]);
-                console.log('Consulta guardada en Google Sheets');
+                console.log('Consulta guardada exitosamente en Google Sheets');
+                
+                return true;
             } catch (error) {
-                console.error('Error guardando consulta en Sheets:', error);
+                console.error('Error guardando consulta en Google Sheets:', error);
                 throw error;
             }
         }
@@ -1690,6 +1744,7 @@
             document.getElementById('patientConditions').value = '';
         }
 
+        // Guardar paciente - MEJORADA
         async function savePatient() {
             const name = document.getElementById('patientName').value.trim();
             if (!name) {
@@ -1708,33 +1763,69 @@
                 createdAt: new Date().toLocaleDateString('es-MX')
             };
 
-            // Guardar localmente
-            patients.push(patient);
+            showLoading(true);
+
             try {
+                // Guardar localmente primero
+                patients.push(patient);
                 localStorage.setItem('nutripro-patients', JSON.stringify(patients));
-            } catch (error) {
-                console.error('Error saving patient locally:', error);
-            }
+                console.log('Paciente guardado localmente');
 
-            // Intentar guardar en Google Sheets
-            if (sheetsConfig.isConfigured) {
-                try {
-                    await savePatientToSheets(patient);
-                } catch (error) {
-                    console.error('Error saving patient to sheets:', error);
-                    alert('Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets');
+                // Intentar guardar en Google Sheets si está configurado
+                if (sheetsConfig.isConfigured) {
+                    try {
+                        await savePatientToSheets(patient);
+                        console.log('Paciente sincronizado con Google Sheets');
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="success">✅ Paciente guardado y sincronizado con Google Sheets</div>';
+                    } catch (error) {
+                        console.error('Error sincronizando con Google Sheets:', error);
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="warning">⚠️ Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets</div>';
+                    }
+                } else {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="warning">📱 Paciente guardado localmente (Google Sheets no configurado)</div>';
                 }
+
+                showLoading(false);
+                cancelNewPatient();
+                displayPatients();
+                alert(`Paciente ${name} agregado correctamente`);
+
+            } catch (error) {
+                showLoading(false);
+                console.error('Error guardando paciente:', error);
+                alert('Error al guardar el paciente. Inténtalo de nuevo.');
             }
-
-            cancelNewPatient();
-            displayPatients();
-
-            alert(`Paciente ${name} agregado correctamente`);
         }
 
-        // Guardar paciente en Google Sheets
+        // Guardar paciente en Google Sheets - MEJORADA
         async function savePatientToSheets(patient) {
+            if (!sheetsConfig.isConfigured) {
+                console.log('Google Sheets no configurado, guardando solo localmente');
+                return;
+            }
+
             try {
+                // Primero verificar si la hoja Pacientes tiene headers
+                const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Pacientes!1:1?key=${sheetsConfig.apiKey}`;
+                const checkResponse = await fetch(checkUrl);
+                
+                if (!checkResponse.ok) {
+                    throw new Error(`Error verificando headers: ${checkResponse.status}`);
+                }
+                
+                const checkData = await checkResponse.json();
+                
+                // Si no hay headers, crearlos
+                if (!checkData.values || checkData.values.length === 0) {
+                    const headers = Object.keys(PATIENT_HEADERS);
+                    await appendToSheet('Pacientes', [headers]);
+                    console.log('Headers de Pacientes creados en Google Sheets');
+                }
+
+                // Ahora agregar el paciente
                 const row = [
                     patient.id,
                     patient.name,
@@ -1747,9 +1838,11 @@
                 ];
 
                 await appendToSheet('Pacientes', [row]);
-                console.log('Paciente guardado en Google Sheets');
+                console.log('Paciente guardado exitosamente en Google Sheets');
+                
+                return true;
             } catch (error) {
-                console.error('Error guardando paciente en Sheets:', error);
+                console.error('Error guardando paciente en Google Sheets:', error);
                 throw error;
             }
         }
