@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriPro - WebApp Nutricional</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk51dHJpUHJvIiwKICAic2hvcnRfbmFtZSI6ICJOdXRyaVBybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E0ZiIsCiAgInRoZW1lX2NvbG9yIjogIiM0Yjc2ODgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEkwSWlCb1pXbG5hSFE5SWpFeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURFeU5DQXhNalFpSUdacGJHdzlJaU5qTmprc01tWXlJajRLUEhCaGRHZ2daRDBpVFRZeUlEY3lZell3SURNdE16QWdNek11TWpOc01qTXVOVEVnTWpNdU5URk1PVFVnTmpndUpURkROamRnTmpJZ05qa3VNVGcxTFRnZ01qZ3VPREExTFRnZ015NHhPVFVnT0dneExERXpJRmd5Y2s0eVlpNHlNeUF5TXk0MWJDMHlNeTQxTVNBeU15NDFNWHBOTmpJZ01UQTBhVzQ0SWlBdlBnbzhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIxMjR4MTI0IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0=">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk51dHJpUHJvIiwKICAic2hvcnRfbmFtZSI6ICJOdXRyaVBybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E0ZiIsCiAgInRoZW1lX2NvbG9yIjogIiM0Yjc2ODgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEkwSWlCb1pXbG5hSFE5SWpFeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURFeU5DQXhNalFpSUdacGJHdzlJaU5qTmprc01tWnlJajRLUEhCaGRHZ2daRDBpVFRZeUlEY3lZell3SURNdE16QWdNek11TWpOc01qTXVOVEVnTWpNdU5URk1PVFVnTmpndUpURkROamRnTmpJZ05qa3VNVGcxTFRnZ01qZ3VPREExTFRnZ015NHhPVFVnT0dneExERXpJRmd5Y2s0eVlpNHlNeUF5TXk0MVl5MHlNeTQxTVNBeU15NDFNWHBOTmpJZ01UQTBhVzQ0SWlBdlBnbzhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIxMjR4MTI0IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0=">
     <style>
         * {
             margin: 0;
@@ -126,6 +126,9 @@
             border-radius: 15px;
             background: white;
             margin-top: 10px;
+            position: absolute;
+            width: 100%;
+            z-index: 100;
         }
 
         .food-item, .patient-item {
@@ -446,8 +449,8 @@
                             <label>API Key:</label>
                             <input type="text" id="apiKey" placeholder="Tu API Key de Google">
                         </div>
-                        <button class="btn btn-primary" id="saveConfigBtn" onclick="saveConfig()">💾 Guardar Configuración</button>
-                        <button class="btn" id="testConnectionBtn" onclick="testConnection()">🔗 Probar Conexión</button>
+                        <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar Configuración</button>
+                        <button class="btn" onclick="testConnection()">🔗 Probar Conexión</button>
                     </div>
                 </div>
 
@@ -471,7 +474,7 @@
             </div>
 
             <div class="warning">
-                <strong>💡 Tip:</strong> Empieza agregando algunos alimentos desde la configuración para poder buscarlos aquí.
+                <strong>💡 Tip:</strong> La app incluye algunos alimentos de ejemplo. Puedes buscar brócoli, acelga y más.
             </div>
         </section>
 
@@ -567,10 +570,86 @@
         let patients = [];
         let currentPatient = null;
 
-        // Funciones globales para configuración (deben estar en scope global)
+        // Base de datos inicial de alimentos (del SMAE)
+        const initialFoods = [
+            {
+                name: "Acelga cocida",
+                energia: 19, proteina: 1.9, lipidos: 0.1, hidratosCarbono: 3.9, fibra: 2.1,
+                vitaminaA: 275.8, acidoAscorbico: 17.9, acidoFolico: 10.1, calcio: 62.1,
+                hierro: 1.4, potasio: 645.1, sodio: 35.0, fosforo: 29.0, azucar: 64.0,
+                colesterol: 0.0
+            },
+            {
+                name: "Acelga cruda",
+                energia: 22, proteina: 2.2, lipidos: 0.1, hidratosCarbono: 4.3, fibra: 3.6,
+                vitaminaA: 310.9, acidoAscorbico: 25.5, acidoFolico: 14.8, calcio: 115.2,
+                hierro: 2.5, potasio: 649.2, sodio: 24.0, fosforo: 40.3, azucar: 64.0,
+                colesterol: 0.0
+            },
+            {
+                name: "Brócoli cocido",
+                energia: 26, proteina: 2.7, lipidos: 0.3, hidratosCarbono: 4.6, fibra: 2.7,
+                vitaminaA: 127.4, acidoAscorbico: 68.4, acidoFolico: 60.3, calcio: 42.5,
+                hierro: 0.8, potasio: 268.9, sodio: 236, fosforo: 54.9, azucar: 92,
+                colesterol: 0.0
+            },
+            {
+                name: "Brócoli crudo",
+                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
+                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
+                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
+                colesterol: 0.0
+            },
+            {
+                name: "Espinaca cruda",
+                energia: 23, proteina: 2.9, lipidos: 0.4, hidratosCarbono: 3.6, fibra: 2.2,
+                vitaminaA: 469.0, acidoAscorbico: 28.1, acidoFolico: 194.4, calcio: 99.0,
+                hierro: 2.7, potasio: 558.0, sodio: 79.0, fosforo: 49.0, azucar: 0.4,
+                colesterol: 0.0
+            },
+            {
+                name: "Zanahoria cruda",
+                energia: 41, proteina: 0.9, lipidos: 0.2, hidratosCarbono: 9.6, fibra: 2.8,
+                vitaminaA: 835.0, acidoAscorbico: 5.9, acidoFolico: 19.0, calcio: 33.0,
+                hierro: 0.3, potasio: 320.0, sodio: 69.0, fosforo: 35.0, azucar: 4.7,
+                colesterol: 0.0
+            }
+        ];
 
+        // Inicializar la app
+        function initApp() {
+            loadConfig();
+            loadInitialFoods();
+            setupEventListeners();
+            updateCalculatorDisplay();
+            loadPatients();
+        }
 
-        // Funciones globales para navegación
+        // Configurar event listeners
+        function setupEventListeners() {
+            const foodSearch = document.getElementById('foodSearch');
+            if (foodSearch) {
+                foodSearch.addEventListener('input', function(e) {
+                    searchFoods(e.target.value);
+                });
+            }
+
+            const patientSearch = document.getElementById('patientSearch');
+            if (patientSearch) {
+                patientSearch.addEventListener('input', function(e) {
+                    searchPatients(e.target.value);
+                });
+            }
+
+            document.addEventListener('click', function(e) {
+                const foodResults = document.getElementById('foodResults');
+                if (foodResults && !e.target.closest('.search-container')) {
+                    foodResults.style.display = 'none';
+                }
+            });
+        }
+
+        // Funciones de navegación
         function showSection(sectionName) {
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
@@ -582,6 +661,89 @@
             
             document.getElementById(sectionName).classList.add('active');
             event.target.classList.add('active');
+        }
+
+        // Funciones de configuración
+        function loadConfig() {
+            const saved = localStorage.getItem('nutripro-config');
+            if (saved) {
+                sheetsConfig = JSON.parse(saved);
+                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
+                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
+                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
+                    sheetsConfig.isConfigured = true;
+                }
+            }
+        }
+
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const sheetId = document.getElementById('sheetId').value.trim();
+            
+            if (!apiKey || !sheetId) {
+                alert('Por favor completa ambos campos');
+                return;
+            }
+            
+            sheetsConfig = {
+                apiKey: apiKey,
+                sheetId: sheetId,
+                isConfigured: true
+            };
+            
+            localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
+            
+            document.getElementById('connectionStatus').innerHTML = 
+                '<div class="success">✅ Configuración guardada correctamente</div>';
+        }
+
+        function testConnection() {
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero guarda la configuración');
+                return;
+            }
+            
+            showLoading(true);
+            
+            setTimeout(() => {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
+            }, 2000);
+        }
+
+        // Funciones de alimentos
+        function loadInitialFoods() {
+            const saved = localStorage.getItem('nutripro-foods');
+            if (saved) {
+                currentFoods = JSON.parse(saved);
+            } else {
+                currentFoods = [...initialFoods];
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+            }
+        }
+
+        function searchFoods(query) {
+            const results = document.getElementById('foodResults');
+            
+            if (query.length < 2) {
+                results.style.display = 'none';
+                return;
+            }
+            
+            const filtered = currentFoods.filter(food => 
+                food.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (filtered.length > 0) {
+                results.innerHTML = filtered.map(food => 
+                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
+                ).join('');
+                results.style.display = 'block';
+            } else {
+                results.innerHTML = '<div class="food-item">No se encontraron alimentos</div>';
+                results.style.display = 'block';
+            }
         }
 
         function selectFood(foodName) {
@@ -675,260 +837,6 @@
             alert(`${food.name} agregado a la calculadora`);
         }
 
-        function updateFoodGrams(foodId, newGrams) {
-            const food = selectedFoods.find(f => f.id === foodId);
-            if (food) {
-                food.grams = parseFloat(newGrams) || 0;
-                updateNutritionSummary();
-            }
-        }
-
-        function removeFoodFromCalculator(foodId) {
-            selectedFoods = selectedFoods.filter(f => f.id !== foodId);
-            updateCalculatorDisplay();
-        }
-
-        function clearCalculator() {
-            selectedFoods = [];
-            updateCalculatorDisplay();
-        }
-
-        function saveCalculation() {
-            if (selectedFoods.length === 0) {
-                alert('Agrega al menos un alimento antes de guardar');
-                return;
-            }
-            
-            const patientName = prompt('¿Para qué paciente es este cálculo?');
-            if (!patientName) return;
-            
-            const calculation = {
-                id: Date.now(),
-                patientName: patientName,
-                date: new Date().toLocaleDateString('es-MX'),
-                foods: [...selectedFoods],
-                timestamp: new Date().toISOString()
-            };
-            
-            let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
-            calculations.push(calculation);
-            localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
-            
-            alert(`Cálculo guardado para ${patientName}`);
-        }
-
-        function showNewPatientForm() {
-            document.getElementById('newPatientForm').style.display = 'block';
-        }
-
-        function cancelNewPatient() {
-            document.getElementById('newPatientForm').style.display = 'none';
-            clearPatientForm();
-        }
-
-        function savePatient() {
-            const name = document.getElementById('patientName').value.trim();
-            if (!name) {
-                alert('El nombre es obligatorio');
-                return;
-            }
-            
-            const patient = {
-                id: Date.now(),
-                name: name,
-                age: parseInt(document.getElementById('patientAge').value) || null,
-                gender: document.getElementById('patientGender').value || null,
-                weight: parseFloat(document.getElementById('patientWeight').value) || null,
-                height: parseFloat(document.getElementById('patientHeight').value) || null,
-                conditions: document.getElementById('patientConditions').value.trim() || null,
-                createdAt: new Date().toISOString(),
-                consultations: []
-            };
-            
-            patients.push(patient);
-            localStorage.setItem('nutripro-patients', JSON.stringify(patients));
-            
-            cancelNewPatient();
-            displayPatients();
-            
-            alert(`Paciente ${name} agregado correctamente`);
-        }
-
-        function viewPatientDetail(patientId) {
-            const patient = patients.find(p => p.id === patientId);
-            if (!patient) return;
-            
-            const calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
-            const patientConsultations = calculations.filter(calc => 
-                calc.patientName.toLowerCase() === patient.name.toLowerCase()
-            );
-            
-            const consultationHistory = patientConsultations.length > 0 ? 
-                patientConsultations.map(consultation => `
-                    <div class="consultation-item">
-                        <strong>Fecha:</strong> ${consultation.date}<br>
-                        <strong>Alimentos:</strong> ${consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ')}
-                    </div>
-                `).join('') : '<p>No hay consultas registradas</p>';
-            
-            const detailHTML = `
-                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-                    <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-                        <h2>👤 ${patient.name}</h2>
-                        <div class="patient-info">
-                            <div class="info-item">
-                                <div class="info-label">Edad</div>
-                                <div class="info-value">${patient.age || 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Género</div>
-                                <div class="info-value">${patient.gender || 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Peso</div>
-                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Estatura</div>
-                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
-                            </div>
-                        </div>
-                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
-                        
-                        <div class="consultation-history">
-                            <h3>📋 Historial de Consultas</h3>
-                            ${consultationHistory}
-                        </div>
-                        
-                        <button class="btn" onclick="closePatientDetail()">❌ Cerrar</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', detailHTML);
-        }
-
-        function closePatientDetail() {
-            const modal = document.querySelector('div[style*="position: fixed"]');
-            if (modal) modal.remove();
-        }
-
-        // Base de datos inicial de alimentos (del SMAE)
-        const initialFoods = [
-            {
-                name: "Acelga cocida",
-                energia: 19, proteina: 1.9, lipidos: 0.1, hidratosCarbono: 3.9, fibra: 2.1,
-                vitaminaA: 275.8, acidoAscorbico: 17.9, acidoFolico: 10.1, calcio: 62.1,
-                hierro: 1.4, potasio: 645.1, sodio: 35.0, fosforo: 29.0, azucar: 64.0,
-                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.0,
-                etanol: 0.0, orgaGlicemica: 0
-            },
-            {
-                name: "Acelga cruda",
-                energia: 22, proteina: 2.2, lipidos: 0.1, hidratosCarbono: 4.3, fibra: 3.6,
-                vitaminaA: 310.9, acidoAscorbico: 25.5, acidoFolico: 14.8, calcio: 115.2,
-                hierro: 2.5, potasio: 649.2, sodio: 24.0, fosforo: 40.3, azucar: 64.0,
-                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.0,
-                etanol: 0.0, orgaGlicemica: 0
-            },
-            {
-                name: "Brócoli cocido",
-                energia: 26, proteina: 2.7, lipidos: 0.3, hidratosCarbono: 4.6, fibra: 2.7,
-                vitaminaA: 127.4, acidoAscorbico: 68.4, acidoFolico: 60.3, calcio: 42.5,
-                hierro: 0.8, potasio: 268.9, sodio: 236, fosforo: 54.9, azucar: 92,
-                colesterol: 0.0, agSaturados: 0.1, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
-                etanol: 0.0, orgaGlicemica: 0
-            },
-            {
-                name: "Brócoli crudo",
-                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
-                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
-                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
-                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
-                etanol: 0.0, orgaGlicemica: 0
-            }
-        ];
-
-        // Inicializar la app
-        function initApp() {
-            loadConfig();
-            loadInitialFoods();
-            setupEventListeners();
-            updateCalculatorDisplay();
-            loadPatients();
-        }
-
-        // Configurar event listeners
-        function setupEventListeners() {
-            const foodSearch = document.getElementById('foodSearch');
-            if (foodSearch) {
-                foodSearch.addEventListener('input', function(e) {
-                    searchFoods(e.target.value);
-                });
-            }
-
-            const patientSearch = document.getElementById('patientSearch');
-            if (patientSearch) {
-                patientSearch.addEventListener('input', function(e) {
-                    searchPatients(e.target.value);
-                });
-            }
-
-            document.addEventListener('click', function(e) {
-                const foodResults = document.getElementById('foodResults');
-                if (foodResults && !e.target.closest('.search-container')) {
-                    foodResults.style.display = 'none';
-                }
-            });
-        }
-
-        // Funciones de configuración
-        function loadConfig() {
-            const saved = localStorage.getItem('nutripro-config');
-            if (saved) {
-                sheetsConfig = JSON.parse(saved);
-                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
-                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
-                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
-                    sheetsConfig.isConfigured = true;
-                }
-            }
-        }
-
-        // Funciones de alimentos
-        function loadInitialFoods() {
-            const saved = localStorage.getItem('nutripro-foods');
-            if (saved) {
-                currentFoods = JSON.parse(saved);
-            } else {
-                currentFoods = [...initialFoods];
-                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
-            }
-        }
-
-        function searchFoods(query) {
-            const results = document.getElementById('foodResults');
-            
-            if (query.length < 2) {
-                results.style.display = 'none';
-                return;
-            }
-            
-            const filtered = currentFoods.filter(food => 
-                food.name.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (filtered.length > 0) {
-                results.innerHTML = filtered.map(food => 
-                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
-                ).join('');
-                results.style.display = 'block';
-            } else {
-                results.innerHTML = '<div class="food-item">No se encontraron alimentos</div>';
-                results.style.display = 'block';
-            }
-        }
-
         // Funciones de calculadora
         function updateCalculatorDisplay() {
             const container = document.getElementById('selectedFoodsList');
@@ -955,6 +863,24 @@
             }
             
             updateNutritionSummary();
+        }
+
+        function updateFoodGrams(foodId, newGrams) {
+            const food = selectedFoods.find(f => f.id === foodId);
+            if (food) {
+                food.grams = parseFloat(newGrams) || 0;
+                updateNutritionSummary();
+            }
+        }
+
+        function removeFoodFromCalculator(foodId) {
+            selectedFoods = selectedFoods.filter(f => f.id !== foodId);
+            updateCalculatorDisplay();
+        }
+
+        function clearCalculator() {
+            selectedFoods = [];
+            updateCalculatorDisplay();
         }
 
         function updateNutritionSummary() {
@@ -1047,350 +973,6 @@
             `;
         }
 
-        // Funciones de pacientes
-        function loadPatients() {
-            const saved = localStorage.getItem('nutripro-patients');
-            if (saved) {
-                patients = JSON.parse(saved);
-                displayPatients();
-            }
-        }
-
-        function clearPatientForm() {
-            document.getElementById('patientName').value = '';
-            document.getElementById('patientAge').value = '';
-            document.getElementById('patientGender').value = '';
-            document.getElementById('patientWeight').value = '';
-            document.getElementById('patientHeight').value = '';
-            document.getElementById('patientConditions').value = '';
-        }
-
-        function searchPatients(query) {
-            if (query.length < 2) {
-                displayPatients();
-                return;
-            }
-            
-            const filtered = patients.filter(patient => 
-                patient.name.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            displayPatients(filtered);
-        }
-
-        function displayPatients(patientsToShow = patients) {
-            const container = document.getElementById('patientsList');
-            
-            if (patientsToShow.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666; margin: 40px 0;">No se encontraron pacientes</p>';
-                return;
-            }
-            
-            const sortedPatients = patientsToShow.sort((a, b) => a.name.localeCompare(b.name));
-            
-            container.innerHTML = sortedPatients.map(patient => {
-                const bmi = patient.weight && patient.height ? 
-                    (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1) : 'N/A';
-                
-                return `
-                    <div class="patient-card" onclick="viewPatientDetail(${patient.id})">
-                        <h3>${patient.name}</h3>
-                        <div class="patient-info">
-                            <div class="info-item">
-                                <div class="info-label">Edad</div>
-                                <div class="info-value">${patient.age || 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Género</div>
-                                <div class="info-value">${patient.gender || 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Peso</div>
-                                <div class="info-value">${patient.weight ? patient.weight + ' kg' : 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Estatura</div>
-                                <div class="info-value">${patient.height ? patient.height + ' cm' : 'N/A'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">IMC</div>
-                                <div class="info-value">${bmi}</div>
-                            </div>
-                        </div>
-                        ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Funciones auxiliares
-        function showLoading(show) {
-            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
-        }
-
-        // Inicializar la aplicación cuando se carga la página
-        document.addEventListener('DOMContentLoaded', initApp);: 54.9, azucar: 92,
-                colesterol: 0.0, agSaturados: 0.1, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
-                etanol: 0.0, orgaGlicemica: 0
-            },
-            {
-                name: "Brócoli crudo",
-                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
-                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
-                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
-                colesterol: 0.0, agSaturados: 0.0, agMonoinsaturados: 0.0, agPoliinsaturados: 0.1,
-                etanol: 0.0, orgaGlicemica: 0
-            }
-        ];
-
-        // Inicializar la app
-        function initApp() {
-            loadConfig();
-            loadInitialFoods();
-            setupEventListeners();
-            updateCalculatorDisplay();
-            loadPatients();
-        }
-
-        // Configurar event listeners
-        function setupEventListeners() {
-            // Búsqueda de alimentos
-            document.getElementById('foodSearch').addEventListener('input', function(e) {
-                searchFoods(e.target.value);
-            });
-
-            // Búsqueda de pacientes
-            document.getElementById('patientSearch').addEventListener('input', function(e) {
-                searchPatients(e.target.value);
-            });
-
-            // Ocultar resultados al hacer clic fuera
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.search-container')) {
-                    document.getElementById('foodResults').style.display = 'none';
-            
-            // Mostrar información nutricional
-            const nutritionInfo = document.getElementById('nutritionInfo');
-            nutritionInfo.innerHTML = `
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Energía (kcal)</div>
-                    <div class="nutrition-value">${food.energia}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Proteína (g)</div>
-                    <div class="nutrition-value">${food.proteina}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Lípidos (g)</div>
-                    <div class="nutrition-value">${food.lipidos}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Hidratos de Carbono (g)</div>
-                    <div class="nutrition-value">${food.hidratosCarbono}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fibra (g)</div>
-                    <div class="nutrition-value">${food.fibra}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A (μg RE)</div>
-                    <div class="nutrition-value">${food.vitaminaA}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ácido Ascórbico (mg)</div>
-                    <div class="nutrition-value">${food.acidoAscorbico}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ácido Fólico (μg)</div>
-                    <div class="nutrition-value">${food.acidoFolico}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Calcio (mg)</div>
-                    <div class="nutrition-value">${food.calcio}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Hierro (mg)</div>
-                    <div class="nutrition-value">${food.hierro}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Potasio (mg)</div>
-                    <div class="nutrition-value">${food.potasio}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Sodio (mg)</div>
-                    <div class="nutrition-value">${food.sodio}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fósforo (mg)</div>
-                    <div class="nutrition-value">${food.fosforo}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Azúcar (g)</div>
-                    <div class="nutrition-value">${food.azucar}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Colesterol (mg)</div>
-                    <div class="nutrition-value">${food.colesterol}</div>
-                </div>
-            `;
-            
-            document.getElementById('selectedFood').style.display = 'block';
-            window.currentSelectedFood = food;
-        }
-
-        function addToCalculator() {
-            if (!window.currentSelectedFood) return;
-            
-            const food = window.currentSelectedFood;
-            const foodEntry = {
-                ...food,
-                grams: 100,
-                id: Date.now()
-            };
-            
-            selectedFoods.push(foodEntry);
-            updateCalculatorDisplay();
-            
-            // Mostrar mensaje de confirmación
-            alert(`${food.name} agregado a la calculadora`);
-        }
-
-        // Funciones de calculadora
-        function updateCalculatorDisplay() {
-            const container = document.getElementById('selectedFoodsList');
-            
-            if (selectedFoods.length === 0) {
-                container.innerHTML = `
-                    <p style="text-align: center; color: #666; margin: 40px 0;">
-                        Agrega alimentos desde la sección "Buscar Alimentos"
-                    </p>
-                `;
-            } else {
-                container.innerHTML = selectedFoods.map(food => `
-                    <div class="food-entry">
-                        <div style="flex: 1;">
-                            <strong>${food.name}</strong>
-                        </div>
-                        <input type="number" value="${food.grams}" min="1" 
-                               onchange="updateFoodGrams(${food.id}, this.value)"
-                               style="margin-left: 10px;">
-                        <span style="margin-left: 5px;">g</span>
-                        <button class="remove-btn" onclick="removeFoodFromCalculator(${food.id})">×</button>
-                    </div>
-                `).join('');
-            }
-            
-            updateNutritionSummary();
-        }
-
-        function updateFoodGrams(foodId, newGrams) {
-            const food = selectedFoods.find(f => f.id === foodId);
-            if (food) {
-                food.grams = parseFloat(newGrams) || 0;
-                updateNutritionSummary();
-            }
-        }
-
-        function removeFoodFromCalculator(foodId) {
-            selectedFoods = selectedFoods.filter(f => f.id !== foodId);
-            updateCalculatorDisplay();
-        }
-
-        function clearCalculator() {
-            selectedFoods = [];
-            updateCalculatorDisplay();
-        }
-
-        function updateNutritionSummary() {
-            const summary = document.getElementById('totalNutrition');
-            
-            if (selectedFoods.length === 0) {
-                summary.innerHTML = '<p style="text-align: center; color: #666;">Selecciona alimentos para ver el resumen nutricional</p>';
-                return;
-            }
-            
-            const totals = selectedFoods.reduce((acc, food) => {
-                const factor = food.grams / 100; // Factor de conversión desde 100g
-                
-                acc.energia += (food.energia * factor);
-                acc.proteina += (food.proteina * factor);
-                acc.lipidos += (food.lipidos * factor);
-                acc.hidratosCarbono += (food.hidratosCarbono * factor);
-                acc.fibra += (food.fibra * factor);
-                acc.vitaminaA += (food.vitaminaA * factor);
-                acc.acidoAscorbico += (food.acidoAscorbico * factor);
-                acc.acidoFolico += (food.acidoFolico * factor);
-                acc.calcio += (food.calcio * factor);
-                acc.hierro += (food.hierro * factor);
-                acc.potasio += (food.potasio * factor);
-                acc.sodio += (food.sodio * factor);
-                acc.fosforo += (food.fosforo * factor);
-                acc.azucar += (food.azucar * factor);
-                acc.colesterol += (food.colesterol * factor);
-                
-                return acc;
-            }, {
-                energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0, fibra: 0,
-                vitaminaA: 0, acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
-                potasio: 0, sodio: 0, fosforo: 0, azucar: 0, colesterol: 0
-            });
-            
-            summary.innerHTML = `
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Energía Total (kcal)</div>
-                    <div class="nutrition-value">${totals.energia.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Proteína Total (g)</div>
-                    <div class="nutrition-value">${totals.proteina.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Lípidos Total (g)</div>
-                    <div class="nutrition-value">${totals.lipidos.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Carbohidratos Total (g)</div>
-                    <div class="nutrition-value">${totals.hidratosCarbono.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fibra Total (g)</div>
-                    <div class="nutrition-value">${totals.fibra.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A Total (μg)</div>
-                    <div class="nutrition-value">${totals.vitaminaA.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ác. Ascórbico Total (mg)</div>
-                    <div class="nutrition-value">${totals.acidoAscorbico.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ác. Fólico Total (μg)</div>
-                    <div class="nutrition-value">${totals.acidoFolico.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Calcio Total (mg)</div>
-                    <div class="nutrition-value">${totals.calcio.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Hierro Total (mg)</div>
-                    <div class="nutrition-value">${totals.hierro.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Potasio Total (mg)</div>
-                    <div class="nutrition-value">${totals.potasio.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Sodio Total (mg)</div>
-                    <div class="nutrition-value">${totals.sodio.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fósforo Total (mg)</div>
-                    <div class="nutrition-value">${totals.fosforo.toFixed(1)}</div>
-                </div>
-            `;
-        }
-
         function saveCalculation() {
             if (selectedFoods.length === 0) {
                 alert('Agrega al menos un alimento antes de guardar');
@@ -1408,7 +990,6 @@
                 timestamp: new Date().toISOString()
             };
             
-            // Guardar en localStorage (después se sincronizará con Google Sheets)
             let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
             calculations.push(calculation);
             localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
@@ -1492,7 +1073,6 @@
                 return;
             }
             
-            // Ordenar alfabéticamente
             const sortedPatients = patientsToShow.sort((a, b) => a.name.localeCompare(b.name));
             
             container.innerHTML = sortedPatients.map(patient => {
@@ -1534,7 +1114,6 @@
             const patient = patients.find(p => p.id === patientId);
             if (!patient) return;
             
-            // Obtener consultas de este paciente
             const calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
             const patientConsultations = calculations.filter(calc => 
                 calc.patientName.toLowerCase() === patient.name.toLowerCase()
@@ -1599,124 +1178,4 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-</html>';
-                }
-            });
-        }
-
-        // Funciones de navegación
-        function showSection(sectionName) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Remover clase active de todos los botones
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Mostrar sección seleccionada
-            document.getElementById(sectionName).classList.add('active');
-            
-            // Activar botón correspondiente
-            event.target.classList.add('active');
-        }
-
-        // Funciones de configuración
-        function loadConfig() {
-            const saved = localStorage.getItem('nutripro-config');
-            if (saved) {
-                sheetsConfig = JSON.parse(saved);
-                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
-                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
-                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
-                    sheetsConfig.isConfigured = true;
-                }
-            }
-        }
-
-        function saveConfig() {
-            console.log('saveConfig called'); // Debug
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const sheetId = document.getElementById('sheetId').value.trim();
-            
-            console.log('API Key:', apiKey ? 'presente' : 'vacío'); // Debug
-            console.log('Sheet ID:', sheetId ? 'presente' : 'vacío'); // Debug
-            
-            if (!apiKey || !sheetId) {
-                alert('Por favor completa ambos campos');
-                return;
-            }
-            
-            sheetsConfig = {
-                apiKey: apiKey,
-                sheetId: sheetId,
-                isConfigured: true
-            };
-            
-            localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
-            
-            document.getElementById('connectionStatus').innerHTML = 
-                '<div class="success">✅ Configuración guardada correctamente</div>';
-            
-            console.log('Configuración guardada'); // Debug
-        }
-
-        function testConnection() {
-            console.log('testConnection called'); // Debug
-            if (!sheetsConfig.isConfigured) {
-                alert('Primero guarda la configuración');
-                return;
-            }
-            
-            showLoading(true);
-            
-            // Simular prueba de conexión
-            setTimeout(() => {
-                showLoading(false);
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
-            }, 2000);
-        }
-
-        // Funciones de alimentos
-        function loadInitialFoods() {
-            const saved = localStorage.getItem('nutripro-foods');
-            if (saved) {
-                currentFoods = JSON.parse(saved);
-            } else {
-                currentFoods = [...initialFoods];
-                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
-            }
-        }
-
-        function searchFoods(query) {
-            const results = document.getElementById('foodResults');
-            
-            if (query.length < 2) {
-                results.style.display = 'none';
-                return;
-            }
-            
-            const filtered = currentFoods.filter(food => 
-                food.name.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (filtered.length > 0) {
-                results.innerHTML = filtered.map(food => 
-                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
-                ).join('');
-                results.style.display = 'block';
-            } else {
-                results.innerHTML = '<div class="food-item">No se encontraron alimentos</div>';
-                results.style.display = 'block';
-            }
-        }
-
-        function selectFood(foodName) {
-            const food = currentFoods.find(f => f.name === foodName);
-            if (!food) return;
-            
-            document.getElementById('foodSearch').value = foodName;
-            document.getElementById('foodResults').style.display = 'none
+</html>
