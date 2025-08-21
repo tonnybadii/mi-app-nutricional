@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriPro - WebApp Nutricional</title>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk51dHJpUHJvIiwKICAic2hvcnRfbmFtZSI6ICJOdXRyaVBybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E0ZiIsCiAgInRoZW1lX2NvbG9yIjogIiM0Yjc2ODgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEkwSWlCb1pXbG5hSFE5SWpFeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURFeU5DQXhNalFpSUdacGJHdzlJaU5qTmprc01tWnlJajRLUEhCaGRHZ2daRDBpVFRZeUlEY3lZell3SURNdE16QWdNek11TWpOc01qTXVOVEVnTWpNdU5URk1PVFVnTmpndUpURkROamRnTmpJZ05qa3VNVGcxTFRnZ01qZ3VPREExTFRnZ015NHhPVFVnT0dneExERXpJRmd5Y2s0eVlpNHlNeUF5TXk0MVl5MHlNeTQxTVNBeU15NDFNWHBOTmpJZ01UQTBhVzQ0SWlBdlBnbzhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIxMjR4MTI0IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0=">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk51dHJpUHJvIiwKICAic2hvcnRfbmFtZSI6ICJOdXRyaVBybyIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzJkM2E0ZiIsCiAgInRoZW1lX2NvbG9yIjogIiM0Yjc2ODgiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0YVdSMGFEMGlNVEkwSWlCb1pXbG5hSFE5SWpFeU5DSWdkbWxsZDBKdmVEMGlNQ0F3SURFeU5DQXhNalFpSUdacGJHdzlJaU5qTmprc01tWnlJajRLUEhCaGRHZ2daRDBpVFRZeUlEY3lZell3SURNdE16QWdNek11TWpOc01qTXVOVEZzTWpNdU5URk1PVFVnTmpndUpURkROamRnTmpJZ05qa3VNVGcxTFRnZ01qZ3VPREExTFRnZ015NHhPVFVnT0dneExERXpJRmd5Y2s0eVlpNHlNeUF5TXk0MVl5MHlNaTQxTVNBeU15NDFNWHBOTmpJZ01UQTBhVzQ0SWlBdlBnbzhMM04yWno0PSIsCiAgICAgICJzaXplcyI6ICIxMjR4MTI0IiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0=">
     <style>
         * {
             margin: 0;
@@ -146,6 +146,21 @@
             border-bottom: none;
         }
 
+        .food-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .food-name {
+            font-weight: 600;
+        }
+
+        .food-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+
         .calculator-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -210,6 +225,8 @@
             grid-template-columns: 2fr 1fr;
             gap: 10px;
             margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .nutrition-row {
@@ -249,6 +266,10 @@
 
         .btn-primary {
             background: linear-gradient(135deg, #c6923f 0%, #a67c2a 100%);
+        }
+
+        .btn-sync {
+            background: linear-gradient(135deg, #28a745 0%, #20923a 100%);
         }
 
         .patient-form {
@@ -361,6 +382,16 @@
             margin-bottom: 10px;
         }
 
+        .headers-example {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
         .warning {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -377,6 +408,15 @@
             padding: 15px;
             margin: 20px 0;
             color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #721c24;
         }
 
         .loading {
@@ -399,6 +439,27 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .sync-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .sync-indicator.connected {
+            background: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -406,6 +467,10 @@
         <header class="header">
             <h1>🥗 NutriPro</h1>
             <p>Herramienta profesional de análisis nutricional</p>
+            <div class="sync-status">
+                <div class="sync-indicator" id="syncIndicator"></div>
+                <span id="syncStatus">Desconectado de Google Sheets</span>
+            </div>
         </header>
 
         <nav class="nav-buttons">
@@ -420,7 +485,7 @@
             <h2>📋 Configuración de Google Sheets</h2>
             <div class="setup-section">
                 <div class="warning">
-                    <strong>⚠️ Importante:</strong> Para usar esta app necesitas configurar Google Sheets para almacenar los datos de forma segura.
+                    <strong>⚠️ Importante:</strong> Para usar esta app necesitas configurar Google Sheets con la estructura correcta de datos nutricionales.
                 </div>
                 
                 <div class="setup-steps">
@@ -432,18 +497,44 @@
                     </div>
 
                     <div class="step">
-                        <h3>Paso 2: Configurar API</h3>
+                        <h3>Paso 2: Configurar las 3 Hojas</h3>
+                        
+                        <h4>📋 Pestaña "Alimentos" (Fila 1):</h4>
+                        <div class="headers-example">
+                            Alimento | Cantidad sugerida | Unidad | Peso bruto (g) | Peso neto (g) | 
+                            Energía (kcal) | Proteína (g) | Lípidos (g) | Hidratos de carbono (g) | 
+                            AG saturados (g) | AG monoinsaturados (g) | AG poliinsaturados (g) | 
+                            Colesterol (mg) | Azúcar (g) | Fibra (g) | Vitamina A (mg RE) | 
+                            Ácido Ascórbico (mg) | Ácido Fólico (mg) | Calcio (mg) | Hierro (mg) | 
+                            Potasio (mg) | Sodio (mg) | Fósforo (mg) | IG | Carga glicémica
+                        </div>
+
+                        <h4>👥 Pestaña "Pacientes" (Fila 1):</h4>
+                        <div class="headers-example">
+                            ID | Nombre | Edad | Género | Peso | Estatura | Padecimientos | Fecha Registro
+                        </div>
+
+                        <h4>📊 Pestaña "Consultas" (Fila 1):</h4>
+                        <div class="headers-example">
+                            ID | Paciente | Fecha | Alimentos | Cantidades | Total Calorías | Total Proteínas | 
+                            Total Lípidos | Total Carbohidratos | Total Fibra | Notas
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <h3>Paso 3: Configurar API</h3>
                         <p>1. Ve a <strong>console.developers.google.com</strong></p>
                         <p>2. Crea un proyecto nuevo</p>
                         <p>3. Habilita "Google Sheets API"</p>
                         <p>4. Crea credenciales (API Key)</p>
+                        <p>5. Haz público tu Google Sheet (Compartir > Cualquiera con el enlace)</p>
                     </div>
 
                     <div class="step">
-                        <h3>Paso 3: Configurar App</h3>
+                        <h3>Paso 4: Configurar App</h3>
                         <div class="form-group">
                             <label>Google Sheets ID:</label>
-                            <input type="text" id="sheetId" placeholder="ID de tu Google Sheet">
+                            <input type="text" id="sheetId" placeholder="ID de tu Google Sheet (extraído de la URL)">
                         </div>
                         <div class="form-group">
                             <label>API Key:</label>
@@ -451,6 +542,9 @@
                         </div>
                         <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar Configuración</button>
                         <button class="btn" onclick="testConnection()">🔗 Probar Conexión</button>
+                        <button class="btn btn-sync" onclick="syncFoodsFromSheets()">🔄 Sincronizar Alimentos</button>
+                        <button class="btn btn-sync" onclick="syncPatientsFromSheets()">👥 Sincronizar Pacientes</button>
+                        <button class="btn btn-sync" onclick="syncConsultationsFromSheets()">📊 Sincronizar Consultas</button>
                     </div>
                 </div>
 
@@ -474,7 +568,7 @@
             </div>
 
             <div class="warning">
-                <strong>💡 Tip:</strong> La app incluye algunos alimentos de ejemplo. Puedes buscar brócoli, acelga y más.
+                <strong>💡 Tip:</strong> Sincroniza los alimentos desde Google Sheets en la sección Configuración para tener acceso a tu base de datos completa.
             </div>
         </section>
 
@@ -510,6 +604,7 @@
             </div>
 
             <button class="btn btn-primary" onclick="showNewPatientForm()">➕ Nuevo Paciente</button>
+            <button class="btn btn-sync" onclick="syncPatientsFromSheets()">🔄 Sincronizar desde Sheets</button>
 
             <div id="newPatientForm" style="display: none; margin-top: 20px;">
                 <h3>📝 Datos del Nuevo Paciente</h3>
@@ -570,49 +665,113 @@
         let patients = [];
         let currentPatient = null;
 
-        // Base de datos inicial de alimentos (del SMAE)
+        // Mapeo de headers para pacientes y consultas
+        const PATIENT_HEADERS = {
+            'ID': 'id',
+            'Nombre': 'name',
+            'Edad': 'age',
+            'Género': 'gender',
+            'Peso': 'weight',
+            'Estatura': 'height',
+            'Padecimientos': 'conditions',
+            'Fecha Registro': 'createdAt'
+        };
+
+        const CONSULTATION_HEADERS = {
+            'ID': 'id',
+            'Paciente': 'patientName',
+            'Fecha': 'date',
+            'Alimentos': 'foodsText',
+            'Cantidades': 'quantitiesText',
+            'Total Calorías': 'totalCalories',
+            'Total Proteínas': 'totalProteins',
+            'Total Lípidos': 'totalLipids',
+            'Total Carbohidratos': 'totalCarbs',
+            'Total Fibra': 'totalFiber',
+            'Notas': 'notes'
+        };
+            'Alimento': 'name',
+            'Cantidad sugerida': 'cantidadSugerida',
+            'Unidad': 'unidad',
+            'Peso bruto (g)': 'pesoBruto',
+            'Peso neto (g)': 'pesoNeto',
+            'Energía (kcal)': 'energia',
+            'Proteína (g)': 'proteina',
+            'Lípidos (g)': 'lipidos',
+            'Hidratos de carbono (g)': 'hidratosCarbono',
+            'AG saturados (g)': 'agSaturados',
+            'AG monoinsaturados (g)': 'agMonoinsaturados',
+            'AG poliinsaturados (g)': 'agPoliinsaturados',
+            'Colesterol (mg)': 'colesterol',
+            'Azúcar (g)': 'azucar',
+            'Fibra (g)': 'fibra',
+            'Vitamina A (mg RE)': 'vitaminaA',
+            'Ácido Ascórbico (mg)': 'acidoAscorbico',
+            'Ácido Fólico (mg)': 'acidoFolico',
+            'Calcio (mg)': 'calcio',
+            'Hierro (mg)': 'hierro',
+            'Potasio (mg)': 'potasio',
+            'Sodio (mg)': 'sodio',
+            'Fósforo (mg)': 'fosforo',
+            'IG': 'ig',
+            'Carga glicémica': 'cargaGlicemica'
+        };
+
+        // Base de datos inicial de alimentos (ejemplos)
         const initialFoods = [
             {
                 name: "Acelga cocida",
-                energia: 19, proteina: 1.9, lipidos: 0.1, hidratosCarbono: 3.9, fibra: 2.1,
-                vitaminaA: 275.8, acidoAscorbico: 17.9, acidoFolico: 10.1, calcio: 62.1,
-                hierro: 1.4, potasio: 645.1, sodio: 35.0, fosforo: 29.0, azucar: 64.0,
-                colesterol: 0.0
-            },
-            {
-                name: "Acelga cruda",
-                energia: 22, proteina: 2.2, lipidos: 0.1, hidratosCarbono: 4.3, fibra: 3.6,
-                vitaminaA: 310.9, acidoAscorbico: 25.5, acidoFolico: 14.8, calcio: 115.2,
-                hierro: 2.5, potasio: 649.2, sodio: 24.0, fosforo: 40.3, azucar: 64.0,
-                colesterol: 0.0
-            },
-            {
-                name: "Brócoli cocido",
-                energia: 26, proteina: 2.7, lipidos: 0.3, hidratosCarbono: 4.6, fibra: 2.7,
-                vitaminaA: 127.4, acidoAscorbico: 68.4, acidoFolico: 60.3, calcio: 42.5,
-                hierro: 0.8, potasio: 268.9, sodio: 236, fosforo: 54.9, azucar: 92,
-                colesterol: 0.0
+                cantidadSugerida: "1 taza",
+                unidad: "g",
+                pesoBruto: 175,
+                pesoNeto: 175,
+                energia: 19,
+                proteina: 1.9,
+                lipidos: 0.1,
+                hidratosCarbono: 3.9,
+                agSaturados: 0.02,
+                agMonoinsaturados: 0.01,
+                agPoliinsaturados: 0.05,
+                colesterol: 0,
+                azucar: 1.8,
+                fibra: 2.1,
+                vitaminaA: 275.8,
+                acidoAscorbico: 17.9,
+                acidoFolico: 10.1,
+                calcio: 62.1,
+                hierro: 1.4,
+                potasio: 645.1,
+                sodio: 35.0,
+                fosforo: 29.0,
+                ig: 15,
+                cargaGlicemica: 1
             },
             {
                 name: "Brócoli crudo",
-                energia: 19, proteina: 2.1, lipidos: 0.3, hidratosCarbono: 3.7, fibra: 2.1,
-                vitaminaA: 110.2, acidoAscorbico: 68.4, acidoFolico: 50.2, calcio: 34.0,
-                hierro: 0.6, potasio: 231.7, sodio: 19.4, fosforo: 47.0, azucar: 88,
-                colesterol: 0.0
-            },
-            {
-                name: "Espinaca cruda",
-                energia: 23, proteina: 2.9, lipidos: 0.4, hidratosCarbono: 3.6, fibra: 2.2,
-                vitaminaA: 469.0, acidoAscorbico: 28.1, acidoFolico: 194.4, calcio: 99.0,
-                hierro: 2.7, potasio: 558.0, sodio: 79.0, fosforo: 49.0, azucar: 0.4,
-                colesterol: 0.0
-            },
-            {
-                name: "Zanahoria cruda",
-                energia: 41, proteina: 0.9, lipidos: 0.2, hidratosCarbono: 9.6, fibra: 2.8,
-                vitaminaA: 835.0, acidoAscorbico: 5.9, acidoFolico: 19.0, calcio: 33.0,
-                hierro: 0.3, potasio: 320.0, sodio: 69.0, fosforo: 35.0, azucar: 4.7,
-                colesterol: 0.0
+                cantidadSugerida: "1 taza",
+                unidad: "g",
+                pesoBruto: 91,
+                pesoNeto: 91,
+                energia: 19,
+                proteina: 2.1,
+                lipidos: 0.3,
+                hidratosCarbono: 3.7,
+                agSaturados: 0.06,
+                agMonoinsaturados: 0.02,
+                agPoliinsaturados: 0.16,
+                colesterol: 0,
+                azucar: 1.5,
+                fibra: 2.1,
+                vitaminaA: 110.2,
+                acidoAscorbico: 68.4,
+                acidoFolico: 50.2,
+                calcio: 34.0,
+                hierro: 0.6,
+                potasio: 231.7,
+                sodio: 19.4,
+                fosforo: 47.0,
+                ig: 10,
+                cargaGlicemica: 1
             }
         ];
 
@@ -623,6 +782,21 @@
             setupEventListeners();
             updateCalculatorDisplay();
             loadPatients();
+            updateSyncStatus();
+        }
+
+        // Actualizar estado de sincronización
+        function updateSyncStatus() {
+            const indicator = document.getElementById('syncIndicator');
+            const status = document.getElementById('syncStatus');
+            
+            if (sheetsConfig.isConfigured) {
+                indicator.classList.add('connected');
+                status.textContent = 'Conectado a Google Sheets';
+            } else {
+                indicator.classList.remove('connected');
+                status.textContent = 'Desconectado de Google Sheets';
+            }
         }
 
         // Configurar event listeners
@@ -692,6 +866,7 @@
             };
             
             localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
+            updateSyncStatus();
             
             document.getElementById('connectionStatus').innerHTML = 
                 '<div class="success">✅ Configuración guardada correctamente</div>';
@@ -705,11 +880,268 @@
             
             showLoading(true);
             
-            setTimeout(() => {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}?key=${sheetsConfig.apiKey}`;
+            
+            fetch(url)
+                .then(response => {
+                    showLoading(false);
+                    if (response.ok) {
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
+                    } else {
+                        throw new Error('Error de conexión');
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="error">❌ Error de conexión. Verifica tu API Key y Sheet ID</div>';
+                    console.error('Error:', error);
+                });
+        }
+
+        // Sincronizar pacientes desde Google Sheets
+        async function syncPatientsFromSheets() {
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero configura la conexión con Google Sheets');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const range = 'Pacientes!A:H'; // Columnas A hasta H (8 columnas)
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos de la hoja Pacientes');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 1) {
+                    // Si no hay datos, crear headers
+                    await createPatientsHeaders();
+                    showLoading(false);
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="success">✅ Hoja Pacientes inicializada correctamente</div>';
+                    return;
+                }
+                
+                const headers = data.values[0];
+                const rows = data.values.slice(1);
+                
+                // Convertir datos de Google Sheets a formato de la app
+                const syncedPatients = rows.map(row => {
+                    const patient = {};
+                    headers.forEach((header, index) => {
+                        const propName = PATIENT_HEADERS[header];
+                        if (propName) {
+                            const value = row[index] || '';
+                            if (propName === 'age' || propName === 'weight' || propName === 'height') {
+                                patient[propName] = parseFloat(value) || null;
+                            } else if (propName === 'id') {
+                                patient[propName] = parseInt(value) || Date.now();
+                            } else {
+                                patient[propName] = value || null;
+                            }
+                        }
+                    });
+                    return patient;
+                }).filter(patient => patient.name && patient.name.trim() !== '');
+                
+                patients = syncedPatients;
+                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+                displayPatients();
+                
                 showLoading(false);
                 document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
-            }, 2000);
+                    `<div class="success">✅ Pacientes sincronizados: ${patients.length} pacientes cargados</div>`;
+                
+            } catch (error) {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="error">❌ Error sincronizando pacientes: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+
+        // Crear headers en la hoja Pacientes
+        async function createPatientsHeaders() {
+            const headers = Object.keys(PATIENT_HEADERS);
+            await appendToSheet('Pacientes', [headers]);
+        }
+
+        // Sincronizar consultas desde Google Sheets
+        async function syncConsultationsFromSheets() {
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero configura la conexión con Google Sheets');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const range = 'Consultas!A:K'; // Columnas A hasta K (11 columnas)
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos de la hoja Consultas');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 1) {
+                    // Si no hay datos, crear headers
+                    await createConsultationsHeaders();
+                    showLoading(false);
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="success">✅ Hoja Consultas inicializada correctamente</div>';
+                    return;
+                }
+                
+                const headers = data.values[0];
+                const rows = data.values.slice(1);
+                
+                // Convertir datos de Google Sheets a formato de la app
+                const syncedConsultations = rows.map(row => {
+                    const consultation = {};
+                    headers.forEach((header, index) => {
+                        const propName = CONSULTATION_HEADERS[header];
+                        if (propName) {
+                            const value = row[index] || '';
+                            if (propName === 'id') {
+                                consultation[propName] = parseInt(value) || Date.now();
+                            } else if (propName.startsWith('total')) {
+                                consultation[propName] = parseFloat(value) || 0;
+                            } else {
+                                consultation[propName] = value;
+                            }
+                        }
+                    });
+                    return consultation;
+                }).filter(consultation => consultation.patientName && consultation.patientName.trim() !== '');
+                
+                // Guardar consultas en formato original para compatibilidad
+                const calculations = syncedConsultations.map(c => ({
+                    id: c.id,
+                    patientName: c.patientName,
+                    date: c.date,
+                    foods: [], // Se puede reconstruir desde foodsText si es necesario
+                    timestamp: new Date(c.date).toISOString()
+                }));
+                
+                localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+                
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="success">✅ Consultas sincronizadas: ${syncedConsultations.length} consultas cargadas</div>`;
+                
+            } catch (error) {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="error">❌ Error sincronizando consultas: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
+        }
+
+        // Crear headers en la hoja Consultas
+        async function createConsultationsHeaders() {
+            const headers = Object.keys(CONSULTATION_HEADERS);
+            await appendToSheet('Consultas', [headers]);
+        }
+
+        // Función genérica para agregar datos a Google Sheets
+        async function appendToSheet(sheetName, values) {
+            if (!sheetsConfig.isConfigured) {
+                throw new Error('Google Sheets no está configurado');
+            }
+
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}:append?valueInputOption=RAW&key=${sheetsConfig.apiKey}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    values: values
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'Error al guardar en Google Sheets');
+            }
+
+            return await response.json();
+        }
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero configura la conexión con Google Sheets');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const range = 'Alimentos!A:Y'; // Columnas A hasta Y (25 columnas)
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos de Google Sheets');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('No se encontraron datos en la hoja Alimentos');
+                }
+                
+                const headers = data.values[0];
+                const rows = data.values.slice(1);
+                
+                // Verificar que tenemos los headers correctos
+                const expectedHeaders = Object.keys(FOOD_HEADERS);
+                const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+                
+                if (missingHeaders.length > 0) {
+                    throw new Error(`Headers faltantes en Google Sheets: ${missingHeaders.join(', ')}`);
+                }
+                
+                // Convertir datos de Google Sheets a formato de la app
+                const syncedFoods = rows.map(row => {
+                    const food = {};
+                    headers.forEach((header, index) => {
+                        const propName = FOOD_HEADERS[header];
+                        if (propName) {
+                            const value = row[index] || '';
+                            // Convertir números
+                            if (propName !== 'name' && propName !== 'unidad' && propName !== 'cantidadSugerida') {
+                                food[propName] = parseFloat(value) || 0;
+                            } else {
+                                food[propName] = value;
+                            }
+                        }
+                    });
+                    return food;
+                }).filter(food => food.name && food.name.trim() !== '');
+                
+                currentFoods = syncedFoods;
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+                
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="success">✅ Sincronización exitosa: ${currentFoods.length} alimentos cargados</div>`;
+                
+            } catch (error) {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="error">❌ Error de sincronización: ${error.message}</div>`;
+                console.error('Error:', error);
+            }
         }
 
         // Funciones de alimentos
@@ -737,7 +1169,14 @@
             
             if (filtered.length > 0) {
                 results.innerHTML = filtered.map(food => 
-                    `<div class="food-item" onclick="selectFood('${food.name}')">${food.name}</div>`
+                    `<div class="food-item" onclick="selectFood('${food.name}')">
+                        <div class="food-detail">
+                            <div>
+                                <div class="food-name">${food.name}</div>
+                                <div class="food-meta">${food.cantidadSugerida || 'N/A'} | ${food.energia} kcal</div>
+                            </div>
+                        </div>
+                    </div>`
                 ).join('');
                 results.style.display = 'block';
             } else {
@@ -756,6 +1195,14 @@
             const nutritionInfo = document.getElementById('nutritionInfo');
             nutritionInfo.innerHTML = `
                 <div class="nutrition-row">
+                    <div class="nutrition-label">Cantidad sugerida</div>
+                    <div class="nutrition-value">${food.cantidadSugerida || 'N/A'}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Peso neto (g)</div>
+                    <div class="nutrition-value">${food.pesoNeto || 'N/A'}</div>
+                </div>
+                <div class="nutrition-row">
                     <div class="nutrition-label">Energía (kcal)</div>
                     <div class="nutrition-value">${food.energia}</div>
                 </div>
@@ -772,11 +1219,31 @@
                     <div class="nutrition-value">${food.hidratosCarbono}</div>
                 </div>
                 <div class="nutrition-row">
+                    <div class="nutrition-label">AG saturados (g)</div>
+                    <div class="nutrition-value">${food.agSaturados || 0}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">AG monoinsaturados (g)</div>
+                    <div class="nutrition-value">${food.agMonoinsaturados || 0}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">AG poliinsaturados (g)</div>
+                    <div class="nutrition-value">${food.agPoliinsaturados || 0}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Colesterol (mg)</div>
+                    <div class="nutrition-value">${food.colesterol}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Azúcar (g)</div>
+                    <div class="nutrition-value">${food.azucar}</div>
+                </div>
+                <div class="nutrition-row">
                     <div class="nutrition-label">Fibra (g)</div>
                     <div class="nutrition-value">${food.fibra}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A (μg RE)</div>
+                    <div class="nutrition-label">Vitamina A (mg RE)</div>
                     <div class="nutrition-value">${food.vitaminaA}</div>
                 </div>
                 <div class="nutrition-row">
@@ -784,7 +1251,7 @@
                     <div class="nutrition-value">${food.acidoAscorbico}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Ácido Fólico (μg)</div>
+                    <div class="nutrition-label">Ácido Fólico (mg)</div>
                     <div class="nutrition-value">${food.acidoFolico}</div>
                 </div>
                 <div class="nutrition-row">
@@ -808,12 +1275,12 @@
                     <div class="nutrition-value">${food.fosforo}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Azúcar (g)</div>
-                    <div class="nutrition-value">${food.azucar}</div>
+                    <div class="nutrition-label">Índice Glicémico</div>
+                    <div class="nutrition-value">${food.ig || 'N/A'}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Colesterol (mg)</div>
-                    <div class="nutrition-value">${food.colesterol}</div>
+                    <div class="nutrition-label">Carga Glicémica</div>
+                    <div class="nutrition-value">${food.cargaGlicemica || 'N/A'}</div>
                 </div>
             `;
             
@@ -827,7 +1294,7 @@
             const food = window.currentSelectedFood;
             const foodEntry = {
                 ...food,
-                grams: 100,
+                grams: food.pesoNeto || 100,
                 id: Date.now()
             };
             
@@ -851,7 +1318,8 @@
                 container.innerHTML = selectedFoods.map(food => `
                     <div class="food-entry">
                         <div style="flex: 1;">
-                            <strong>${food.name}</strong>
+                            <strong>${food.name}</strong><br>
+                            <small>${food.cantidadSugerida || 'N/A'}</small>
                         </div>
                         <input type="number" value="${food.grams}" min="1" 
                                onchange="updateFoodGrams(${food.id}, this.value)"
@@ -898,6 +1366,11 @@
                 acc.proteina += (food.proteina * factor);
                 acc.lipidos += (food.lipidos * factor);
                 acc.hidratosCarbono += (food.hidratosCarbono * factor);
+                acc.agSaturados += ((food.agSaturados || 0) * factor);
+                acc.agMonoinsaturados += ((food.agMonoinsaturados || 0) * factor);
+                acc.agPoliinsaturados += ((food.agPoliinsaturados || 0) * factor);
+                acc.colesterol += (food.colesterol * factor);
+                acc.azucar += (food.azucar * factor);
                 acc.fibra += (food.fibra * factor);
                 acc.vitaminaA += (food.vitaminaA * factor);
                 acc.acidoAscorbico += (food.acidoAscorbico * factor);
@@ -907,14 +1380,14 @@
                 acc.potasio += (food.potasio * factor);
                 acc.sodio += (food.sodio * factor);
                 acc.fosforo += (food.fosforo * factor);
-                acc.azucar += (food.azucar * factor);
-                acc.colesterol += (food.colesterol * factor);
                 
                 return acc;
             }, {
-                energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0, fibra: 0,
-                vitaminaA: 0, acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
-                potasio: 0, sodio: 0, fosforo: 0, azucar: 0, colesterol: 0
+                energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0,
+                agSaturados: 0, agMonoinsaturados: 0, agPoliinsaturados: 0,
+                colesterol: 0, azucar: 0, fibra: 0, vitaminaA: 0,
+                acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
+                potasio: 0, sodio: 0, fosforo: 0
             });
             
             summary.innerHTML = `
@@ -935,11 +1408,31 @@
                     <div class="nutrition-value">${totals.hidratosCarbono.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
+                    <div class="nutrition-label">AG Saturados Total (g)</div>
+                    <div class="nutrition-value">${totals.agSaturados.toFixed(2)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">AG Monoinsaturados Total (g)</div>
+                    <div class="nutrition-value">${totals.agMonoinsaturados.toFixed(2)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">AG Poliinsaturados Total (g)</div>
+                    <div class="nutrition-value">${totals.agPoliinsaturados.toFixed(2)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Colesterol Total (mg)</div>
+                    <div class="nutrition-value">${totals.colesterol.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
+                    <div class="nutrition-label">Azúcar Total (g)</div>
+                    <div class="nutrition-value">${totals.azucar.toFixed(1)}</div>
+                </div>
+                <div class="nutrition-row">
                     <div class="nutrition-label">Fibra Total (g)</div>
                     <div class="nutrition-value">${totals.fibra.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A Total (μg)</div>
+                    <div class="nutrition-label">Vitamina A Total (mg)</div>
                     <div class="nutrition-value">${totals.vitaminaA.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
@@ -947,7 +1440,7 @@
                     <div class="nutrition-value">${totals.acidoAscorbico.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Ác. Fólico Total (μg)</div>
+                    <div class="nutrition-label">Ác. Fólico Total (mg)</div>
                     <div class="nutrition-value">${totals.acidoFolico.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
@@ -982,19 +1475,64 @@
             const patientName = prompt('¿Para qué paciente es este cálculo?');
             if (!patientName) return;
             
+            // Calcular totales
+            const totals = selectedFoods.reduce((acc, food) => {
+                const factor = food.grams / 100;
+                acc.calories += (food.energia * factor);
+                acc.proteins += (food.proteina * factor);
+                acc.lipids += (food.lipidos * factor);
+                acc.carbs += (food.hidratosCarbono * factor);
+                acc.fiber += (food.fibra * factor);
+                return acc;
+            }, { calories: 0, proteins: 0, lipids: 0, carbs: 0, fiber: 0 });
+            
             const calculation = {
                 id: Date.now(),
                 patientName: patientName,
                 date: new Date().toLocaleDateString('es-MX'),
                 foods: [...selectedFoods],
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                totals: totals
             };
             
+            // Guardar localmente
             let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
             calculations.push(calculation);
             localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
             
+            // Intentar guardar en Google Sheets
+            if (sheetsConfig.isConfigured) {
+                saveConsultationToSheets(calculation, totals);
+            }
+            
             alert(`Cálculo guardado para ${patientName}`);
+        }
+
+        // Guardar consulta en Google Sheets
+        async function saveConsultationToSheets(calculation, totals) {
+            try {
+                const foodsText = calculation.foods.map(f => f.name).join(', ');
+                const quantitiesText = calculation.foods.map(f => `${f.grams}g`).join(', ');
+                
+                const row = [
+                    calculation.id,
+                    calculation.patientName,
+                    calculation.date,
+                    foodsText,
+                    quantitiesText,
+                    totals.calories.toFixed(1),
+                    totals.proteins.toFixed(1),
+                    totals.lipids.toFixed(1),
+                    totals.carbs.toFixed(1),
+                    totals.fiber.toFixed(1),
+                    '' // Notas (vacío por ahora)
+                ];
+                
+                await appendToSheet('Consultas', [row]);
+                console.log('Consulta guardada en Google Sheets');
+            } catch (error) {
+                console.error('Error guardando consulta en Sheets:', error);
+            }
         }
 
         // Funciones de pacientes
@@ -1039,17 +1577,43 @@
                 weight: parseFloat(document.getElementById('patientWeight').value) || null,
                 height: parseFloat(document.getElementById('patientHeight').value) || null,
                 conditions: document.getElementById('patientConditions').value.trim() || null,
-                createdAt: new Date().toISOString(),
-                consultations: []
+                createdAt: new Date().toLocaleDateString('es-MX')
             };
             
+            // Guardar localmente
             patients.push(patient);
             localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+            
+            // Intentar guardar en Google Sheets
+            if (sheetsConfig.isConfigured) {
+                savePatientToSheets(patient);
+            }
             
             cancelNewPatient();
             displayPatients();
             
             alert(`Paciente ${name} agregado correctamente`);
+        }
+
+        // Guardar paciente en Google Sheets
+        async function savePatientToSheets(patient) {
+            try {
+                const row = [
+                    patient.id,
+                    patient.name,
+                    patient.age || '',
+                    patient.gender || '',
+                    patient.weight || '',
+                    patient.height || '',
+                    patient.conditions || '',
+                    patient.createdAt
+                ];
+                
+                await appendToSheet('Pacientes', [row]);
+                console.log('Paciente guardado en Google Sheets');
+            } catch (error) {
+                console.error('Error guardando paciente en Sheets:', error);
+            }
         }
 
         function searchPatients(query) {
