@@ -460,6 +460,59 @@
         .sync-indicator.connected {
             background: #28a745;
         }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .patient-selector {
+            margin: 20px 0;
+        }
+
+        .patient-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .patient-option:hover {
+            background: #e9ecef;
+            border-color: #4b7688;
+        }
+
+        .patient-option.selected {
+            background: #e3f2fd;
+            border-color: #4b7688;
+        }
+
+        .new-patient-option {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
     </style>
 </head>
 <body>
@@ -585,7 +638,7 @@
                         </p>
                     </div>
                     <button class="btn" onclick="clearCalculator()">🗑️ Limpiar Todo</button>
-                    <button class="btn btn-primary" onclick="saveCalculation()">💾 Guardar Cálculo</button>
+                    <button class="btn btn-primary" onclick="showSaveCalculationModal()">💾 Guardar Cálculo</button>
                 </div>
 
                 <div class="nutrition-summary">
@@ -664,8 +717,9 @@
         let selectedFoods = [];
         let patients = [];
         let currentPatient = null;
+        let selectedPatientForCalculation = null;
 
-        // Mapeo de headers corregido
+        // Mapeo de headers
         const PATIENT_HEADERS = {
             'ID': 'id',
             'Nombre': 'name',
@@ -1102,16 +1156,8 @@
                     return consultation;
                 }).filter(consultation => consultation.patientName && consultation.patientName.trim() !== '');
                 
-                // Guardar consultas en formato original para compatibilidad
-                const calculations = syncedConsultations.map(c => ({
-                    id: c.id,
-                    patientName: c.patientName,
-                    date: c.date,
-                    foods: [],
-                    timestamp: new Date(c.date).toISOString()
-                }));
-                
-                localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+                // Guardar consultas en localStorage
+                localStorage.setItem('nutripro-consultations', JSON.stringify(syncedConsultations));
                 
                 showLoading(false);
                 document.getElementById('connectionStatus').innerHTML = 
@@ -1383,16 +1429,148 @@
             `;
         }
 
-        async function saveCalculation() {
+        // Modal para seleccionar o crear paciente antes de guardar cálculo
+        function showSaveCalculationModal() {
             if (selectedFoods.length === 0) {
                 alert('Agrega al menos un alimento antes de guardar');
                 return;
             }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h2>💾 Guardar Cálculo Nutricional</h2>
+                    <p>Selecciona un paciente existente o crea uno nuevo:</p>
+                    
+                    <div class="patient-selector">
+                        <div class="patient-option new-patient-option" onclick="selectNewPatientOption()">
+                            <strong>➕ Crear Nuevo Paciente</strong>
+                            <br><small>Agregar un paciente nuevo para este cálculo</small>
+                        </div>
+                        
+                        ${patients.length > 0 ? patients.map(patient => `
+                            <div class="patient-option" onclick="selectExistingPatient(${patient.id})">
+                                <strong>${patient.name}</strong>
+                                <br><small>Edad: ${patient.age || 'N/A'} | Peso: ${patient.weight || 'N/A'} kg</small>
+                            </div>
+                        `).join('') : '<p style="text-align: center; color: #666;">No hay pacientes registrados</p>'}
+                    </div>
+
+                    <div id="newPatientFields" style="display: none;">
+                        <h3>Datos del Nuevo Paciente</h3>
+                        <div style="display: grid; gap: 15px; margin: 15px 0;">
+                            <input type="text" id="modalPatientName" placeholder="Nombre completo *" required>
+                            <input type="number" id="modalPatientAge" placeholder="Edad">
+                            <select id="modalPatientGender">
+                                <option value="">Seleccionar género</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                            <input type="number" id="modalPatientWeight" placeholder="Peso (kg)" step="0.1">
+                            <input type="number" id="modalPatientHeight" placeholder="Estatura (cm)" step="0.1">
+                            <textarea id="modalPatientConditions" placeholder="Padecimientos (opcional)" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="saveCalculationWithPatient()" id="saveBtn" disabled>
+                            💾 Guardar Cálculo
+                        </button>
+                        <button class="btn" onclick="closeSaveModal()">
+                            ❌ Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            window.currentSaveModal = modal;
+        }
+
+        function selectExistingPatient(patientId) {
+            const patient = patients.find(p => p.id === patientId);
+            if (!patient) return;
+
+            // Deseleccionar todas las opciones
+            document.querySelectorAll('.patient-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Seleccionar la opción actual
+            event.target.classList.add('selected');
             
-            const patientName = prompt('¿Para qué paciente es este cálculo?');
-            if (!patientName) return;
+            // Ocultar campos de nuevo paciente
+            document.getElementById('newPatientFields').style.display = 'none';
             
-            // Calcular totales
+            selectedPatientForCalculation = patient;
+            document.getElementById('saveBtn').disabled = false;
+        }
+
+        function selectNewPatientOption() {
+            // Deseleccionar todas las opciones
+            document.querySelectorAll('.patient-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Seleccionar la opción de nuevo paciente
+            event.target.classList.add('selected');
+            
+            // Mostrar campos de nuevo paciente
+            document.getElementById('newPatientFields').style.display = 'block';
+            
+            selectedPatientForCalculation = 'new';
+            document.getElementById('saveBtn').disabled = false;
+        }
+
+        async function saveCalculationWithPatient() {
+            let patientToUse = null;
+
+            if (selectedPatientForCalculation === 'new') {
+                // Crear nuevo paciente
+                const name = document.getElementById('modalPatientName').value.trim();
+                if (!name) {
+                    alert('El nombre del paciente es obligatorio');
+                    return;
+                }
+
+                const newPatient = {
+                    id: Date.now(),
+                    name: name,
+                    age: parseInt(document.getElementById('modalPatientAge').value) || null,
+                    gender: document.getElementById('modalPatientGender').value || null,
+                    weight: parseFloat(document.getElementById('modalPatientWeight').value) || null,
+                    height: parseFloat(document.getElementById('modalPatientHeight').value) || null,
+                    conditions: document.getElementById('modalPatientConditions').value.trim() || null,
+                    createdAt: new Date().toLocaleDateString('es-MX')
+                };
+
+                // Guardar paciente localmente
+                patients.push(newPatient);
+                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+
+                // Intentar guardar en Google Sheets
+                if (sheetsConfig.isConfigured) {
+                    try {
+                        await savePatientToSheets(newPatient);
+                    } catch (error) {
+                        console.error('Error saving patient to sheets:', error);
+                    }
+                }
+
+                patientToUse = newPatient;
+                displayPatients(); // Actualizar la lista de pacientes
+            } else {
+                patientToUse = selectedPatientForCalculation;
+            }
+
+            if (!patientToUse) {
+                alert('Selecciona un paciente válido');
+                return;
+            }
+
+            // Calcular totales nutricionales
             const totals = selectedFoods.reduce((acc, food) => {
                 const factor = food.grams / 100;
                 acc.calories += (food.energia * factor);
@@ -1402,57 +1580,76 @@
                 acc.fiber += (food.fibra * factor);
                 return acc;
             }, { calories: 0, proteins: 0, lipids: 0, carbs: 0, fiber: 0 });
-            
-            const calculation = {
+
+            const consultation = {
                 id: Date.now(),
-                patientName: patientName,
+                patientName: patientToUse.name,
                 date: new Date().toLocaleDateString('es-MX'),
-                foods: [...selectedFoods],
-                timestamp: new Date().toISOString(),
-                totals: totals
+                foodsText: selectedFoods.map(f => f.name).join(', '),
+                quantitiesText: selectedFoods.map(f => `${f.grams}g`).join(', '),
+                totalCalories: totals.calories.toFixed(1),
+                totalProteins: totals.proteins.toFixed(1),
+                totalLipids: totals.lipids.toFixed(1),
+                totalCarbs: totals.carbs.toFixed(1),
+                totalFiber: totals.fiber.toFixed(1),
+                notes: '',
+                foods: [...selectedFoods], // Mantener estructura detallada para compatibilidad
+                timestamp: new Date().toISOString()
             };
-            
-            // Guardar localmente
+
+            // Guardar consulta localmente
             try {
-                let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
-                calculations.push(calculation);
-                localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+                let consultations = JSON.parse(localStorage.getItem('nutripro-consultations') || '[]');
+                consultations.push(consultation);
+                localStorage.setItem('nutripro-consultations', JSON.stringify(consultations));
             } catch (error) {
-                console.error('Error saving calculation locally:', error);
+                console.error('Error saving consultation locally:', error);
             }
-            
+
             // Intentar guardar en Google Sheets
             if (sheetsConfig.isConfigured) {
                 try {
-                    await saveConsultationToSheets(calculation, totals);
+                    await saveConsultationToSheets(consultation);
                 } catch (error) {
-                    console.error('Error saving to sheets:', error);
+                    console.error('Error saving consultation to sheets:', error);
+                    alert('Cálculo guardado localmente, pero hubo un error al sincronizar con Google Sheets');
                 }
             }
+
+            closeSaveModal();
+            alert(`Cálculo guardado exitosamente para ${patientToUse.name}`);
             
-            alert(`Cálculo guardado para ${patientName}`);
+            // Limpiar calculadora opcional
+            if (confirm('¿Deseas limpiar la calculadora para comenzar un nuevo cálculo?')) {
+                clearCalculator();
+            }
+        }
+
+        function closeSaveModal() {
+            if (window.currentSaveModal) {
+                document.body.removeChild(window.currentSaveModal);
+                window.currentSaveModal = null;
+            }
+            selectedPatientForCalculation = null;
         }
 
         // Guardar consulta en Google Sheets
-        async function saveConsultationToSheets(calculation, totals) {
+        async function saveConsultationToSheets(consultation) {
             try {
-                const foodsText = calculation.foods.map(f => f.name).join(', ');
-                const quantitiesText = calculation.foods.map(f => `${f.grams}g`).join(', ');
-                
                 const row = [
-                    calculation.id,
-                    calculation.patientName,
-                    calculation.date,
-                    foodsText,
-                    quantitiesText,
-                    totals.calories.toFixed(1),
-                    totals.proteins.toFixed(1),
-                    totals.lipids.toFixed(1),
-                    totals.carbs.toFixed(1),
-                    totals.fiber.toFixed(1),
-                    ''
+                    consultation.id,
+                    consultation.patientName,
+                    consultation.date,
+                    consultation.foodsText,
+                    consultation.quantitiesText,
+                    consultation.totalCalories,
+                    consultation.totalProteins,
+                    consultation.totalLipids,
+                    consultation.totalCarbs,
+                    consultation.totalFiber,
+                    consultation.notes || ''
                 ];
-                
+
                 await appendToSheet('Consultas', [row]);
                 console.log('Consulta guardada en Google Sheets');
             } catch (error) {
@@ -1499,7 +1696,7 @@
                 alert('El nombre es obligatorio');
                 return;
             }
-            
+
             const patient = {
                 id: Date.now(),
                 name: name,
@@ -1510,7 +1707,7 @@
                 conditions: document.getElementById('patientConditions').value.trim() || null,
                 createdAt: new Date().toLocaleDateString('es-MX')
             };
-            
+
             // Guardar localmente
             patients.push(patient);
             try {
@@ -1518,19 +1715,20 @@
             } catch (error) {
                 console.error('Error saving patient locally:', error);
             }
-            
+
             // Intentar guardar en Google Sheets
             if (sheetsConfig.isConfigured) {
                 try {
                     await savePatientToSheets(patient);
                 } catch (error) {
                     console.error('Error saving patient to sheets:', error);
+                    alert('Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets');
                 }
             }
-            
+
             cancelNewPatient();
             displayPatients();
-            
+
             alert(`Paciente ${name} agregado correctamente`);
         }
 
@@ -1547,7 +1745,7 @@
                     patient.conditions || '',
                     patient.createdAt
                 ];
-                
+
                 await appendToSheet('Pacientes', [row]);
                 console.log('Paciente guardado en Google Sheets');
             } catch (error) {
@@ -1561,28 +1759,28 @@
                 displayPatients();
                 return;
             }
-            
+
             const filtered = patients.filter(patient => 
                 patient.name.toLowerCase().includes(query.toLowerCase())
             );
-            
+
             displayPatients(filtered);
         }
 
         function displayPatients(patientsToShow = patients) {
             const container = document.getElementById('patientsList');
-            
+
             if (patientsToShow.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #666; margin: 40px 0;">No se encontraron pacientes</p>';
                 return;
             }
-            
+
             const sortedPatients = patientsToShow.sort((a, b) => a.name.localeCompare(b.name));
-            
+
             container.innerHTML = sortedPatients.map(patient => {
                 const bmi = patient.weight && patient.height ? 
                     (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1) : 'N/A';
-                
+
                 return `
                     <div class="patient-card" onclick="viewPatientDetail(${patient.id})">
                         <h3>${patient.name}</h3>
@@ -1617,32 +1815,37 @@
         function viewPatientDetail(patientId) {
             const patient = patients.find(p => p.id === patientId);
             if (!patient) return;
-            
-            let calculations = [];
+
+            let consultations = [];
             try {
-                calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+                consultations = JSON.parse(localStorage.getItem('nutripro-consultations') || '[]');
             } catch (error) {
-                console.error('Error loading calculations:', error);
+                console.error('Error loading consultations:', error);
             }
-            
-            const patientConsultations = calculations.filter(calc => 
-                calc.patientName.toLowerCase() === patient.name.toLowerCase()
+
+            const patientConsultations = consultations.filter(consultation => 
+                consultation.patientName.toLowerCase() === patient.name.toLowerCase()
             );
-            
+
             const consultationHistory = patientConsultations.length > 0 ? 
                 patientConsultations.map(consultation => `
                     <div class="consultation-item">
                         <strong>Fecha:</strong> ${consultation.date}<br>
-                        <strong>Alimentos:</strong> ${consultation.foods ? consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ') : 'N/A'}
-                        ${consultation.totals ? `<br><strong>Total Calorías:</strong> ${consultation.totals.calories.toFixed(1)} kcal` : ''}
+                        <strong>Alimentos:</strong> ${consultation.foodsText || 'N/A'}<br>
+                        <strong>Cantidades:</strong> ${consultation.quantitiesText || 'N/A'}<br>
+                        <strong>Total Calorías:</strong> ${consultation.totalCalories} kcal<br>
+                        <strong>Proteínas:</strong> ${consultation.totalProteins}g | 
+                        <strong>Lípidos:</strong> ${consultation.totalLipids}g | 
+                        <strong>Carbohidratos:</strong> ${consultation.totalCarbs}g
+                        ${consultation.notes ? `<br><strong>Notas:</strong> ${consultation.notes}` : ''}
                     </div>
                 `).join('') : '<p>No hay consultas registradas</p>';
-            
+
             const modalId = `patient-modal-${patientId}`;
-            
+
             const detailHTML = `
-                <div id="${modalId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
-                    <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                <div id="${modalId}" class="modal">
+                    <div class="modal-content">
                         <h2>👤 ${patient.name}</h2>
                         <div class="patient-info">
                             <div class="info-item">
@@ -1663,17 +1866,17 @@
                             </div>
                         </div>
                         ${patient.conditions ? `<p><strong>Padecimientos:</strong> ${patient.conditions}</p>` : ''}
-                        
+
                         <div class="consultation-history">
-                            <h3>📋 Historial de Consultas</h3>
+                            <h3>📋 Historial de Consultas (${patientConsultations.length})</h3>
                             ${consultationHistory}
                         </div>
-                        
+
                         <button class="btn" onclick="closePatientDetail('${modalId}')">❌ Cerrar</button>
                     </div>
                 </div>
             `;
-            
+
             document.body.insertAdjacentHTML('beforeend', detailHTML);
         }
 
@@ -1692,8 +1895,12 @@
 
         // Event listener para cerrar modales al hacer clic fuera
         document.addEventListener('click', function(e) {
-            if (e.target.style && e.target.style.position === 'fixed') {
-                e.target.remove();
+            if (e.target.classList.contains('modal')) {
+                if (e.target === window.currentSaveModal) {
+                    closeSaveModal();
+                } else {
+                    e.target.remove();
+                }
             }
         });
 
