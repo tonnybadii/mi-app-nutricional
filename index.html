@@ -474,10 +474,10 @@
         </header>
 
         <nav class="nav-buttons">
-            <button class="nav-btn active" onclick="showSection('setup')">⚙️ Configuración</button>
-            <button class="nav-btn" onclick="showSection('search')">🔍 Buscar Alimentos</button>
-            <button class="nav-btn" onclick="showSection('calculator')">🧮 Calculadora</button>
-            <button class="nav-btn" onclick="showSection('patients')">👥 Pacientes</button>
+            <button class="nav-btn active" onclick="showSection('setup', this)">⚙️ Configuración</button>
+            <button class="nav-btn" onclick="showSection('search', this)">🔍 Buscar Alimentos</button>
+            <button class="nav-btn" onclick="showSection('calculator', this)">🧮 Calculadora</button>
+            <button class="nav-btn" onclick="showSection('patients', this)">👥 Pacientes</button>
         </nav>
 
         <!-- Sección de Configuración -->
@@ -665,7 +665,7 @@
         let patients = [];
         let currentPatient = null;
 
-        // Mapeo de headers para pacientes y consultas
+        // Mapeo de headers corregido
         const PATIENT_HEADERS = {
             'ID': 'id',
             'Nombre': 'name',
@@ -690,6 +690,8 @@
             'Total Fibra': 'totalFiber',
             'Notas': 'notes'
         };
+
+        const FOOD_HEADERS = {
             'Alimento': 'name',
             'Cantidad sugerida': 'cantidadSugerida',
             'Unidad': 'unidad',
@@ -717,7 +719,7 @@
             'Carga glicémica': 'cargaGlicemica'
         };
 
-        // Base de datos inicial de alimentos (ejemplos)
+        // Base de datos inicial de alimentos
         const initialFoods = [
             {
                 name: "Acelga cocida",
@@ -815,6 +817,7 @@
                 });
             }
 
+            // Cerrar resultados cuando se hace clic fuera
             document.addEventListener('click', function(e) {
                 const foodResults = document.getElementById('foodResults');
                 if (foodResults && !e.target.closest('.search-container')) {
@@ -824,29 +827,40 @@
         }
 
         // Funciones de navegación
-        function showSection(sectionName) {
+        function showSection(sectionName, buttonElement) {
+            // Ocultar todas las secciones
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
             
+            // Quitar clase active de todos los botones
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
+            // Mostrar la sección seleccionada
             document.getElementById(sectionName).classList.add('active');
-            event.target.classList.add('active');
+            
+            // Activar el botón seleccionado
+            if (buttonElement) {
+                buttonElement.classList.add('active');
+            }
         }
 
         // Funciones de configuración
         function loadConfig() {
-            const saved = localStorage.getItem('nutripro-config');
-            if (saved) {
-                sheetsConfig = JSON.parse(saved);
-                if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
-                    document.getElementById('apiKey').value = sheetsConfig.apiKey;
-                    document.getElementById('sheetId').value = sheetsConfig.sheetId;
-                    sheetsConfig.isConfigured = true;
+            try {
+                const saved = localStorage.getItem('nutripro-config');
+                if (saved) {
+                    sheetsConfig = JSON.parse(saved);
+                    if (sheetsConfig.apiKey && sheetsConfig.sheetId) {
+                        document.getElementById('apiKey').value = sheetsConfig.apiKey;
+                        document.getElementById('sheetId').value = sheetsConfig.sheetId;
+                        sheetsConfig.isConfigured = true;
+                    }
                 }
+            } catch (error) {
+                console.error('Error loading config:', error);
             }
         }
 
@@ -865,14 +879,20 @@
                 isConfigured: true
             };
             
-            localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
-            updateSyncStatus();
-            
-            document.getElementById('connectionStatus').innerHTML = 
-                '<div class="success">✅ Configuración guardada correctamente</div>';
+            try {
+                localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
+                updateSyncStatus();
+                
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="success">✅ Configuración guardada correctamente</div>';
+            } catch (error) {
+                console.error('Error saving config:', error);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="error">❌ Error guardando configuración</div>';
+            }
         }
 
-        function testConnection() {
+        async function testConnection() {
             if (!sheetsConfig.isConfigured) {
                 alert('Primero guarda la configuración');
                 return;
@@ -880,24 +900,84 @@
             
             showLoading(true);
             
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}?key=${sheetsConfig.apiKey}`;
-            
-            fetch(url)
-                .then(response => {
-                    showLoading(false);
-                    if (response.ok) {
-                        document.getElementById('connectionStatus').innerHTML = 
-                            '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
-                    } else {
-                        throw new Error('Error de conexión');
-                    }
-                })
-                .catch(error => {
-                    showLoading(false);
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                showLoading(false);
+                
+                if (response.ok) {
                     document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="error">❌ Error de conexión. Verifica tu API Key y Sheet ID</div>';
-                    console.error('Error:', error);
-                });
+                        '<div class="success">✅ Conexión exitosa con Google Sheets</div>';
+                } else {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="error">❌ Error de conexión. Verifica tu API Key y Sheet ID</div>';
+                console.error('Connection error:', error);
+            }
+        }
+
+        // Sincronizar alimentos desde Google Sheets
+        async function syncFoodsFromSheets() {
+            if (!sheetsConfig.isConfigured) {
+                alert('Primero configura la conexión con Google Sheets');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const range = 'Alimentos!A:Y';
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    throw new Error('No se encontraron datos en la hoja Alimentos');
+                }
+                
+                const headers = data.values[0];
+                const rows = data.values.slice(1);
+                
+                // Convertir datos de Google Sheets a formato de la app
+                const syncedFoods = rows.map(row => {
+                    const food = {};
+                    headers.forEach((header, index) => {
+                        const propName = FOOD_HEADERS[header];
+                        if (propName) {
+                            const value = row[index] || '';
+                            // Convertir números
+                            if (propName !== 'name' && propName !== 'unidad' && propName !== 'cantidadSugerida') {
+                                food[propName] = parseFloat(value) || 0;
+                            } else {
+                                food[propName] = value;
+                            }
+                        }
+                    });
+                    return food;
+                }).filter(food => food.name && food.name.trim() !== '');
+                
+                currentFoods = syncedFoods;
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+                
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="success">✅ Sincronización exitosa: ${currentFoods.length} alimentos cargados</div>`;
+                
+            } catch (error) {
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="error">❌ Error de sincronización: ${error.message}</div>`;
+                console.error('Sync error:', error);
+            }
         }
 
         // Sincronizar pacientes desde Google Sheets
@@ -910,18 +990,17 @@
             showLoading(true);
             
             try {
-                const range = 'Pacientes!A:H'; // Columnas A hasta H (8 columnas)
+                const range = 'Pacientes!A:H';
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
                 
                 const response = await fetch(url);
                 if (!response.ok) {
-                    throw new Error('Error al obtener datos de la hoja Pacientes');
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
                 
                 if (!data.values || data.values.length < 1) {
-                    // Si no hay datos, crear headers
                     await createPatientsHeaders();
                     showLoading(false);
                     document.getElementById('connectionStatus').innerHTML = 
@@ -963,7 +1042,7 @@
                 showLoading(false);
                 document.getElementById('connectionStatus').innerHTML = 
                     `<div class="error">❌ Error sincronizando pacientes: ${error.message}</div>`;
-                console.error('Error:', error);
+                console.error('Sync patients error:', error);
             }
         }
 
@@ -983,18 +1062,17 @@
             showLoading(true);
             
             try {
-                const range = 'Consultas!A:K'; // Columnas A hasta K (11 columnas)
+                const range = 'Consultas!A:K';
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
                 
                 const response = await fetch(url);
                 if (!response.ok) {
-                    throw new Error('Error al obtener datos de la hoja Consultas');
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
                 
                 const data = await response.json();
                 
                 if (!data.values || data.values.length < 1) {
-                    // Si no hay datos, crear headers
                     await createConsultationsHeaders();
                     showLoading(false);
                     document.getElementById('connectionStatus').innerHTML = 
@@ -1029,7 +1107,7 @@
                     id: c.id,
                     patientName: c.patientName,
                     date: c.date,
-                    foods: [], // Se puede reconstruir desde foodsText si es necesario
+                    foods: [],
                     timestamp: new Date(c.date).toISOString()
                 }));
                 
@@ -1043,7 +1121,7 @@
                 showLoading(false);
                 document.getElementById('connectionStatus').innerHTML = 
                     `<div class="error">❌ Error sincronizando consultas: ${error.message}</div>`;
-                console.error('Error:', error);
+                console.error('Sync consultations error:', error);
             }
         }
 
@@ -1078,80 +1156,20 @@
 
             return await response.json();
         }
-            if (!sheetsConfig.isConfigured) {
-                alert('Primero configura la conexión con Google Sheets');
-                return;
-            }
-
-            showLoading(true);
-            
-            try {
-                const range = 'Alimentos!A:Y'; // Columnas A hasta Y (25 columnas)
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
-                
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error('Error al obtener datos de Google Sheets');
-                }
-                
-                const data = await response.json();
-                
-                if (!data.values || data.values.length < 2) {
-                    throw new Error('No se encontraron datos en la hoja Alimentos');
-                }
-                
-                const headers = data.values[0];
-                const rows = data.values.slice(1);
-                
-                // Verificar que tenemos los headers correctos
-                const expectedHeaders = Object.keys(FOOD_HEADERS);
-                const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
-                
-                if (missingHeaders.length > 0) {
-                    throw new Error(`Headers faltantes en Google Sheets: ${missingHeaders.join(', ')}`);
-                }
-                
-                // Convertir datos de Google Sheets a formato de la app
-                const syncedFoods = rows.map(row => {
-                    const food = {};
-                    headers.forEach((header, index) => {
-                        const propName = FOOD_HEADERS[header];
-                        if (propName) {
-                            const value = row[index] || '';
-                            // Convertir números
-                            if (propName !== 'name' && propName !== 'unidad' && propName !== 'cantidadSugerida') {
-                                food[propName] = parseFloat(value) || 0;
-                            } else {
-                                food[propName] = value;
-                            }
-                        }
-                    });
-                    return food;
-                }).filter(food => food.name && food.name.trim() !== '');
-                
-                currentFoods = syncedFoods;
-                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
-                
-                showLoading(false);
-                document.getElementById('connectionStatus').innerHTML = 
-                    `<div class="success">✅ Sincronización exitosa: ${currentFoods.length} alimentos cargados</div>`;
-                
-            } catch (error) {
-                showLoading(false);
-                document.getElementById('connectionStatus').innerHTML = 
-                    `<div class="error">❌ Error de sincronización: ${error.message}</div>`;
-                console.error('Error:', error);
-            }
-        }
 
         // Funciones de alimentos
         function loadInitialFoods() {
-            const saved = localStorage.getItem('nutripro-foods');
-            if (saved) {
-                currentFoods = JSON.parse(saved);
-            } else {
+            try {
+                const saved = localStorage.getItem('nutripro-foods');
+                if (saved) {
+                    currentFoods = JSON.parse(saved);
+                } else {
+                    currentFoods = [...initialFoods];
+                    localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+                }
+            } catch (error) {
+                console.error('Error loading foods:', error);
                 currentFoods = [...initialFoods];
-                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
             }
         }
 
@@ -1168,8 +1186,8 @@
             );
             
             if (filtered.length > 0) {
-                results.innerHTML = filtered.map(food => 
-                    `<div class="food-item" onclick="selectFood('${food.name}')">
+                results.innerHTML = filtered.slice(0, 10).map(food => 
+                    `<div class="food-item" onclick="selectFood('${food.name.replace(/'/g, "\\'")}')">
                         <div class="food-detail">
                             <div>
                                 <div class="food-name">${food.name}</div>
@@ -1219,40 +1237,8 @@
                     <div class="nutrition-value">${food.hidratosCarbono}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">AG saturados (g)</div>
-                    <div class="nutrition-value">${food.agSaturados || 0}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">AG monoinsaturados (g)</div>
-                    <div class="nutrition-value">${food.agMonoinsaturados || 0}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">AG poliinsaturados (g)</div>
-                    <div class="nutrition-value">${food.agPoliinsaturados || 0}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Colesterol (mg)</div>
-                    <div class="nutrition-value">${food.colesterol}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Azúcar (g)</div>
-                    <div class="nutrition-value">${food.azucar}</div>
-                </div>
-                <div class="nutrition-row">
                     <div class="nutrition-label">Fibra (g)</div>
                     <div class="nutrition-value">${food.fibra}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A (mg RE)</div>
-                    <div class="nutrition-value">${food.vitaminaA}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ácido Ascórbico (mg)</div>
-                    <div class="nutrition-value">${food.acidoAscorbico}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ácido Fólico (mg)</div>
-                    <div class="nutrition-value">${food.acidoFolico}</div>
                 </div>
                 <div class="nutrition-row">
                     <div class="nutrition-label">Calcio (mg)</div>
@@ -1263,24 +1249,8 @@
                     <div class="nutrition-value">${food.hierro}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Potasio (mg)</div>
-                    <div class="nutrition-value">${food.potasio}</div>
-                </div>
-                <div class="nutrition-row">
                     <div class="nutrition-label">Sodio (mg)</div>
                     <div class="nutrition-value">${food.sodio}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fósforo (mg)</div>
-                    <div class="nutrition-value">${food.fosforo}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Índice Glicémico</div>
-                    <div class="nutrition-value">${food.ig || 'N/A'}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Carga Glicémica</div>
-                    <div class="nutrition-value">${food.cargaGlicemica || 'N/A'}</div>
                 </div>
             `;
             
@@ -1366,28 +1336,15 @@
                 acc.proteina += (food.proteina * factor);
                 acc.lipidos += (food.lipidos * factor);
                 acc.hidratosCarbono += (food.hidratosCarbono * factor);
-                acc.agSaturados += ((food.agSaturados || 0) * factor);
-                acc.agMonoinsaturados += ((food.agMonoinsaturados || 0) * factor);
-                acc.agPoliinsaturados += ((food.agPoliinsaturados || 0) * factor);
-                acc.colesterol += (food.colesterol * factor);
-                acc.azucar += (food.azucar * factor);
                 acc.fibra += (food.fibra * factor);
-                acc.vitaminaA += (food.vitaminaA * factor);
-                acc.acidoAscorbico += (food.acidoAscorbico * factor);
-                acc.acidoFolico += (food.acidoFolico * factor);
                 acc.calcio += (food.calcio * factor);
                 acc.hierro += (food.hierro * factor);
-                acc.potasio += (food.potasio * factor);
                 acc.sodio += (food.sodio * factor);
-                acc.fosforo += (food.fosforo * factor);
                 
                 return acc;
             }, {
                 energia: 0, proteina: 0, lipidos: 0, hidratosCarbono: 0,
-                agSaturados: 0, agMonoinsaturados: 0, agPoliinsaturados: 0,
-                colesterol: 0, azucar: 0, fibra: 0, vitaminaA: 0,
-                acidoAscorbico: 0, acidoFolico: 0, calcio: 0, hierro: 0,
-                potasio: 0, sodio: 0, fosforo: 0
+                fibra: 0, calcio: 0, hierro: 0, sodio: 0
             });
             
             summary.innerHTML = `
@@ -1408,40 +1365,8 @@
                     <div class="nutrition-value">${totals.hidratosCarbono.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">AG Saturados Total (g)</div>
-                    <div class="nutrition-value">${totals.agSaturados.toFixed(2)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">AG Monoinsaturados Total (g)</div>
-                    <div class="nutrition-value">${totals.agMonoinsaturados.toFixed(2)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">AG Poliinsaturados Total (g)</div>
-                    <div class="nutrition-value">${totals.agPoliinsaturados.toFixed(2)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Colesterol Total (mg)</div>
-                    <div class="nutrition-value">${totals.colesterol.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Azúcar Total (g)</div>
-                    <div class="nutrition-value">${totals.azucar.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
                     <div class="nutrition-label">Fibra Total (g)</div>
                     <div class="nutrition-value">${totals.fibra.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Vitamina A Total (mg)</div>
-                    <div class="nutrition-value">${totals.vitaminaA.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ác. Ascórbico Total (mg)</div>
-                    <div class="nutrition-value">${totals.acidoAscorbico.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Ác. Fólico Total (mg)</div>
-                    <div class="nutrition-value">${totals.acidoFolico.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
                     <div class="nutrition-label">Calcio Total (mg)</div>
@@ -1452,21 +1377,13 @@
                     <div class="nutrition-value">${totals.hierro.toFixed(1)}</div>
                 </div>
                 <div class="nutrition-row">
-                    <div class="nutrition-label">Potasio Total (mg)</div>
-                    <div class="nutrition-value">${totals.potasio.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
                     <div class="nutrition-label">Sodio Total (mg)</div>
                     <div class="nutrition-value">${totals.sodio.toFixed(1)}</div>
-                </div>
-                <div class="nutrition-row">
-                    <div class="nutrition-label">Fósforo Total (mg)</div>
-                    <div class="nutrition-value">${totals.fosforo.toFixed(1)}</div>
                 </div>
             `;
         }
 
-        function saveCalculation() {
+        async function saveCalculation() {
             if (selectedFoods.length === 0) {
                 alert('Agrega al menos un alimento antes de guardar');
                 return;
@@ -1496,13 +1413,21 @@
             };
             
             // Guardar localmente
-            let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
-            calculations.push(calculation);
-            localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+            try {
+                let calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+                calculations.push(calculation);
+                localStorage.setItem('nutripro-calculations', JSON.stringify(calculations));
+            } catch (error) {
+                console.error('Error saving calculation locally:', error);
+            }
             
             // Intentar guardar en Google Sheets
             if (sheetsConfig.isConfigured) {
-                saveConsultationToSheets(calculation, totals);
+                try {
+                    await saveConsultationToSheets(calculation, totals);
+                } catch (error) {
+                    console.error('Error saving to sheets:', error);
+                }
             }
             
             alert(`Cálculo guardado para ${patientName}`);
@@ -1525,22 +1450,28 @@
                     totals.lipids.toFixed(1),
                     totals.carbs.toFixed(1),
                     totals.fiber.toFixed(1),
-                    '' // Notas (vacío por ahora)
+                    ''
                 ];
                 
                 await appendToSheet('Consultas', [row]);
                 console.log('Consulta guardada en Google Sheets');
             } catch (error) {
                 console.error('Error guardando consulta en Sheets:', error);
+                throw error;
             }
         }
 
         // Funciones de pacientes
         function loadPatients() {
-            const saved = localStorage.getItem('nutripro-patients');
-            if (saved) {
-                patients = JSON.parse(saved);
-                displayPatients();
+            try {
+                const saved = localStorage.getItem('nutripro-patients');
+                if (saved) {
+                    patients = JSON.parse(saved);
+                    displayPatients();
+                }
+            } catch (error) {
+                console.error('Error loading patients:', error);
+                patients = [];
             }
         }
 
@@ -1562,7 +1493,7 @@
             document.getElementById('patientConditions').value = '';
         }
 
-        function savePatient() {
+        async function savePatient() {
             const name = document.getElementById('patientName').value.trim();
             if (!name) {
                 alert('El nombre es obligatorio');
@@ -1582,11 +1513,19 @@
             
             // Guardar localmente
             patients.push(patient);
-            localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+            try {
+                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+            } catch (error) {
+                console.error('Error saving patient locally:', error);
+            }
             
             // Intentar guardar en Google Sheets
             if (sheetsConfig.isConfigured) {
-                savePatientToSheets(patient);
+                try {
+                    await savePatientToSheets(patient);
+                } catch (error) {
+                    console.error('Error saving patient to sheets:', error);
+                }
             }
             
             cancelNewPatient();
@@ -1613,6 +1552,7 @@
                 console.log('Paciente guardado en Google Sheets');
             } catch (error) {
                 console.error('Error guardando paciente en Sheets:', error);
+                throw error;
             }
         }
 
@@ -1678,7 +1618,13 @@
             const patient = patients.find(p => p.id === patientId);
             if (!patient) return;
             
-            const calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            let calculations = [];
+            try {
+                calculations = JSON.parse(localStorage.getItem('nutripro-calculations') || '[]');
+            } catch (error) {
+                console.error('Error loading calculations:', error);
+            }
+            
             const patientConsultations = calculations.filter(calc => 
                 calc.patientName.toLowerCase() === patient.name.toLowerCase()
             );
@@ -1687,12 +1633,15 @@
                 patientConsultations.map(consultation => `
                     <div class="consultation-item">
                         <strong>Fecha:</strong> ${consultation.date}<br>
-                        <strong>Alimentos:</strong> ${consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ')}
+                        <strong>Alimentos:</strong> ${consultation.foods ? consultation.foods.map(f => `${f.name} (${f.grams}g)`).join(', ') : 'N/A'}
+                        ${consultation.totals ? `<br><strong>Total Calorías:</strong> ${consultation.totals.calories.toFixed(1)} kcal` : ''}
                     </div>
                 `).join('') : '<p>No hay consultas registradas</p>';
             
+            const modalId = `patient-modal-${patientId}`;
+            
             const detailHTML = `
-                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                <div id="${modalId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
                     <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
                         <h2>👤 ${patient.name}</h2>
                         <div class="patient-info">
@@ -1720,7 +1669,7 @@
                             ${consultationHistory}
                         </div>
                         
-                        <button class="btn" onclick="closePatientDetail()">❌ Cerrar</button>
+                        <button class="btn" onclick="closePatientDetail('${modalId}')">❌ Cerrar</button>
                     </div>
                 </div>
             `;
@@ -1728,18 +1677,39 @@
             document.body.insertAdjacentHTML('beforeend', detailHTML);
         }
 
-        function closePatientDetail() {
-            const modal = document.querySelector('div[style*="position: fixed"]');
+        function closePatientDetail(modalId) {
+            const modal = document.getElementById(modalId);
             if (modal) modal.remove();
         }
 
         // Funciones auxiliares
         function showLoading(show) {
-            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+            const loading = document.getElementById('loadingIndicator');
+            if (loading) {
+                loading.style.display = show ? 'block' : 'none';
+            }
         }
 
+        // Event listener para cerrar modales al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (e.target.style && e.target.style.position === 'fixed') {
+                e.target.remove();
+            }
+        });
+
         // Inicializar la aplicación cuando se carga la página
-        document.addEventListener('DOMContentLoaded', initApp);
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                initApp();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+            }
+        });
+
+        // Prevenir errores de referencia
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+        });
     </script>
 </body>
 </html>
