@@ -514,7 +514,6 @@
             border: 2px solid #ffc107;
         }
 
-        /* Estilos para ocultar configuración cuando está preconfigurada */
         .config-hidden {
             display: none !important;
         }
@@ -592,7 +591,7 @@
                     </div>
 
                     <div class="step">
-                        <h3>📝 Estructura de tu Google Sheet</h3>
+                        <h3>🔍 Estructura de tu Google Sheet</h3>
                         <p>Asegúrate de que tu Google Sheets tenga estas 3 pestañas:</p>
                         
                         <h4>📋 Pestaña "Alimentos" (Fila 1):</h4>
@@ -736,7 +735,7 @@
         let currentPatient = null;
         let selectedPatientForCalculation = null;
 
-        // Mapeo de headers
+        // Mapeo de headers corregido y simplificado
         const PATIENT_HEADERS = {
             'ID': 'id',
             'Nombre': 'name',
@@ -916,7 +915,7 @@
             
             try {
                 await syncFoodsFromSheets();
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Pausa para evitar rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 await syncPatientsFromSheets();
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1035,6 +1034,39 @@
             }
         }
 
+        // FUNCIÓN CORREGIDA PARA AGREGAR DATOS A GOOGLE SHEETS
+        async function appendToSheet(sheetName, values) {
+            console.log(`📝 Agregando datos a hoja: ${sheetName}`, values);
+            
+            try {
+                // Usar la API correcta para append (agregar datos al final)
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        values: values
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Google Sheets API Error:', errorData);
+                    throw new Error(errorData.error?.message || `Error HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log(`✅ Datos guardados exitosamente en Google Sheets (${sheetName}):`, result);
+                return result;
+            } catch (error) {
+                console.error(`❌ Error guardando en ${sheetName}:`, error);
+                throw error;
+            }
+        }
+
         // Sincronizar alimentos desde Google Sheets - MEJORADA
         async function syncFoodsFromSheets() {
             console.log('🔄 Iniciando sincronización de alimentos...');
@@ -1098,7 +1130,7 @@
             }
         }
 
-        // Sincronizar pacientes desde Google Sheets - MEJORADA
+        // FUNCIÓN CORREGIDA PARA SINCRONIZAR PACIENTES
         async function syncPatientsFromSheets() {
             console.log('👥 Iniciando sincronización de pacientes...');
             showLoading(true);
@@ -1124,21 +1156,22 @@
                 }
                 
                 const headers = data.values[0];
-                const rows = data.values.slice(1);
+                console.log('📋 Headers encontrados:', headers);
                 
+                const rows = data.values.slice(1);
                 console.log(`👥 Procesando ${rows.length} pacientes...`);
                 
                 // Convertir datos de Google Sheets a formato de la app
-                const syncedPatients = rows.map(row => {
+                const syncedPatients = rows.map((row, index) => {
                     const patient = {};
-                    headers.forEach((header, index) => {
+                    headers.forEach((header, colIndex) => {
                         const propName = PATIENT_HEADERS[header.trim()];
                         if (propName) {
-                            const value = row[index] || '';
+                            const value = row[colIndex] || '';
                             if (propName === 'age' || propName === 'weight' || propName === 'height') {
                                 patient[propName] = parseFloat(value) || null;
                             } else if (propName === 'id') {
-                                patient[propName] = parseInt(value) || Date.now();
+                                patient[propName] = parseInt(value) || (Date.now() + index);
                             } else {
                                 patient[propName] = value.toString().trim() || null;
                             }
@@ -1164,10 +1197,20 @@
             }
         }
 
-        // Crear headers en la hoja Pacientes
+        // FUNCIÓN CORREGIDA PARA CREAR HEADERS DE PACIENTES
         async function createPatientsHeaders() {
+            console.log('📋 Creando headers en la hoja Pacientes...');
             const headers = Object.keys(PATIENT_HEADERS);
-            await appendToSheet('Pacientes', [headers]);
+            console.log('📝 Headers a crear:', headers);
+            
+            try {
+                await appendToSheet('Pacientes', [headers]);
+                console.log('✅ Headers de Pacientes creados exitosamente');
+                return true;
+            } catch (error) {
+                console.error('❌ Error creando headers de Pacientes:', error);
+                throw error;
+            }
         }
 
         // Sincronizar consultas desde Google Sheets - MEJORADA
@@ -1239,33 +1282,6 @@
         async function createConsultationsHeaders() {
             const headers = Object.keys(CONSULTATION_HEADERS);
             await appendToSheet('Consultas', [headers]);
-        }
-
-        // Función genérica para agregar datos a Google Sheets - MEJORADA
-        async function appendToSheet(sheetName, values) {
-            console.log(`📝 Agregando datos a hoja: ${sheetName}`);
-            
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}!A:A/append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${sheetsConfig.apiKey}`;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    values: values
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Google Sheets API Error:', errorData);
-                throw new Error(errorData.error?.message || `Error HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log(`✅ Datos guardados en Google Sheets (${sheetName}):`, result);
-            return result;
         }
 
         // Funciones de alimentos
@@ -1706,10 +1722,10 @@
             selectedPatientForCalculation = null;
         }
 
-        // Guardar consulta en Google Sheets - MEJORADA
+        // FUNCIÓN CORREGIDA PARA GUARDAR CONSULTA EN GOOGLE SHEETS
         async function saveConsultationToSheets(consultation) {
             try {
-                console.log('📊 Guardando consulta en Google Sheets...');
+                console.log('📊 Guardando consulta en Google Sheets...', consultation);
                 
                 // Verificar si la hoja Consultas tiene headers
                 const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Consultas!1:1?key=${sheetsConfig.apiKey}`;
@@ -1728,7 +1744,7 @@
                     console.log('📝 Headers de Consultas creados en Google Sheets');
                 }
 
-                // Ahora agregar la consulta
+                // Preparar la fila de datos en el mismo orden que los headers
                 const row = [
                     consultation.id,
                     consultation.patientName,
@@ -1743,6 +1759,7 @@
                     consultation.notes || ''
                 ];
 
+                console.log('📝 Datos de consulta a guardar:', row);
                 await appendToSheet('Consultas', [row]);
                 console.log('✅ Consulta guardada exitosamente en Google Sheets');
                 
@@ -1786,7 +1803,7 @@
             document.getElementById('patientConditions').value = '';
         }
 
-        // Guardar paciente - MEJORADA
+        // FUNCIÓN PRINCIPAL CORREGIDA PARA GUARDAR PACIENTE
         async function savePatient() {
             const name = document.getElementById('patientName').value.trim();
             if (!name) {
@@ -1805,13 +1822,14 @@
                 createdAt: new Date().toLocaleDateString('es-MX')
             };
 
+            console.log('💾 Guardando paciente:', patient);
             showLoading(true);
 
             try {
-                // Guardar localmente primero
+                // Guardar localmente primero (SIEMPRE funciona)
                 patients.push(patient);
                 localStorage.setItem('nutripro-patients', JSON.stringify(patients));
-                console.log('👥 Paciente guardado localmente');
+                console.log('✅ Paciente guardado localmente');
 
                 // Intentar guardar en Google Sheets
                 try {
@@ -1819,10 +1837,10 @@
                     console.log('✅ Paciente sincronizado con Google Sheets');
                     document.getElementById('connectionStatus').innerHTML = 
                         '<div class="success">✅ Paciente guardado y sincronizado con Google Sheets</div>';
-                } catch (error) {
-                    console.error('⚠️ Error sincronizando con Google Sheets:', error);
+                } catch (sheetsError) {
+                    console.error('⚠️ Error sincronizando con Google Sheets:', sheetsError);
                     document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="warning">⚠️ Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets</div>';
+                        '<div class="warning">⚠️ Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets. Revisa la configuración.</div>';
                 }
 
                 showLoading(false);
@@ -1832,34 +1850,32 @@
 
             } catch (error) {
                 showLoading(false);
-                console.error('❌ Error guardando paciente:', error);
-                alert('Error al guardar el paciente. Inténtalo de nuevo.');
+                console.error('❌ Error crítico guardando paciente:', error);
+                alert(`Error al guardar el paciente: ${error.message}`);
             }
         }
 
-        // Guardar paciente en Google Sheets - MEJORADA
+        // FUNCIÓN CORREGIDA PARA GUARDAR PACIENTE EN GOOGLE SHEETS
         async function savePatientToSheets(patient) {
             try {
-                console.log('👥 Guardando paciente en Google Sheets...');
+                console.log('👥 Guardando paciente en Google Sheets:', patient);
                 
-                // Primero verificar si la hoja Pacientes tiene headers
+                // Verificar si la hoja Pacientes existe y tiene headers
                 const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Pacientes!1:1?key=${sheetsConfig.apiKey}`;
                 const checkResponse = await fetch(checkUrl);
                 
                 if (!checkResponse.ok) {
-                    throw new Error(`Error verificando headers: ${checkResponse.status}`);
-                }
-                
-                const checkData = await checkResponse.json();
-                
-                // Si no hay headers, crearlos
-                if (!checkData.values || checkData.values.length === 0) {
-                    const headers = Object.keys(PATIENT_HEADERS);
-                    await appendToSheet('Pacientes', [headers]);
-                    console.log('📝 Headers de Pacientes creados en Google Sheets');
+                    console.log('📋 La hoja Pacientes no existe o no tiene headers, creándolos...');
+                    await createPatientsHeaders();
+                } else {
+                    const checkData = await checkResponse.json();
+                    if (!checkData.values || checkData.values.length === 0) {
+                        console.log('📋 Creando headers en hoja Pacientes vacía...');
+                        await createPatientsHeaders();
+                    }
                 }
 
-                // Ahora agregar el paciente
+                // Preparar la fila de datos en el mismo orden que los headers definidos
                 const row = [
                     patient.id,
                     patient.name,
@@ -1871,13 +1887,14 @@
                     patient.createdAt
                 ];
 
+                console.log('📝 Datos de paciente a guardar:', row);
                 await appendToSheet('Pacientes', [row]);
                 console.log('✅ Paciente guardado exitosamente en Google Sheets');
                 
                 return true;
             } catch (error) {
-                console.error('❌ Error guardando paciente en Google Sheets:', error);
-                throw error;
+                console.error('❌ Error guardando paciente en Google Sheets:', error.message);
+                throw new Error(`Error al sincronizar con Google Sheets: ${error.message}`);
             }
         }
 
@@ -2057,3 +2074,4 @@
     </script>
 </body>
 </html>
+            
