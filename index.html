@@ -909,27 +909,32 @@
         }
 
         // ====== FUNCIÓN CORREGIDA PARA GUARDAR EN GOOGLE SHEETS ======
-        async function appendToSheet(sheetName, values) {
-            console.log(`📝 Intentando guardar en hoja: ${sheetName}`, values);
-            
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}:append`;
-                
-                const requestBody = {
-                    range: sheetName,
-                    majorDimension: "ROWS",
-                    values: values
-                };
-                
-                console.log('📤 Enviando datos a Google Sheets:', requestBody);
-                
-                const response = await fetch(`${url}?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${sheetsConfig.apiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+        // NUEVA FUNCIÓN PARA GUARDAR EN GOOGLE SHEETS (via Apps Script)
+async function appendToSheet(sheetName, values) {
+    console.log(`📝 Enviando datos a hoja: ${sheetName}`, values);
+
+    try {
+        const url = "https://script.google.com/macros/s/AKfycbwT9t1dnbhs9GptaP7FqkDDd2vcQz7n7ZJ3eQqBM98NMBsqXR0mcwtDQQjfQe6HJC8M/exec"; // <-- tu URL publicada
+        const response = await fetch(`${url}?sheet=${sheetName}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values)
+        });
+
+        const result = await response.json();
+        if (result.status !== "ok") {
+            throw new Error(result.message || "Error desconocido en el servidor");
+        }
+
+        console.log(`✅ Datos guardados en Google Sheets (${sheetName})`);
+        return result;
+
+    } catch (error) {
+        console.error(`❌ Error guardando en ${sheetName}:`, error);
+        throw error;
+    }
+}
+
 
                 const responseText = await response.text();
                 console.log('📥 Respuesta de Google Sheets:', responseText);
