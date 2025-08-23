@@ -537,6 +537,30 @@
             margin: 15px 0;
             text-align: center;
         }
+
+        .setup-instructions {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            color: #0d47a1;
+        }
+
+        .setup-instructions h3 {
+            margin-bottom: 15px;
+            color: #1976d2;
+        }
+
+        .apps-script-url {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -557,20 +581,111 @@
             <button class="nav-btn" onclick="showSection('setup', this)">⚙️ Configuración</button>
         </nav>
 
+        <!-- Mensaje de Configuración Requerida -->
+        <div id="setupInstructions" class="setup-instructions">
+            <h2>📋 Configuración Requerida</h2>
+            <p><strong>Para que los datos se guarden en Google Sheets, necesitas configurar Google Apps Script:</strong></p>
+            
+            <div class="step">
+                <h3>🔗 Paso 1: Crear Google Apps Script</h3>
+                <p>1. Ve a <a href="https://script.google.com" target="_blank">script.google.com</a></p>
+                <p>2. Crea un nuevo proyecto</p>
+                <p>3. Copia y pega este código en el editor:</p>
+                
+                <div class="headers-example">
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.openById('1P3mTcZ944yI_cj-vsyCTi3MQUnxk9KTjRwVfjwUXapc');
+  
+  try {
+    if (data.type === 'patient') {
+      const sheet = ss.getSheetByName('Pacientes') || ss.insertSheet('Pacientes');
+      
+      // Verificar y crear headers si es necesario
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['ID', 'Nombre', 'Edad', 'Género', 'Peso', 'Estatura', 'Padecimientos', 'Fecha Registro']);
+      }
+      
+      const patient = data.patient;
+      sheet.appendRow([
+        patient.id,
+        patient.name,
+        patient.age || '',
+        patient.gender || '',
+        patient.weight || '',
+        patient.height || '',
+        patient.conditions || '',
+        patient.createdAt
+      ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: 'Paciente guardado'}));
+      
+    } else if (data.type === 'consultation') {
+      const sheet = ss.getSheetByName('Consultas') || ss.insertSheet('Consultas');
+      
+      // Verificar y crear headers si es necesario
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['ID', 'Paciente', 'Fecha', 'Alimentos', 'Cantidades', 'Total Calorías', 'Total Proteínas', 'Total Lípidos', 'Total Carbohidratos', 'Total Fibra', 'Notas']);
+      }
+      
+      const consultation = data.consultation;
+      sheet.appendRow([
+        consultation.id,
+        consultation.patientName,
+        consultation.date,
+        consultation.foodsText,
+        consultation.quantitiesText,
+        consultation.totalCalories,
+        consultation.totalProteins,
+        consultation.totalLipids,
+        consultation.totalCarbs,
+        consultation.totalFiber,
+        consultation.notes || ''
+      ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true, message: 'Consulta guardada'}));
+    }
+    
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}));
+  }
+}
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>🚀 Paso 2: Desplegar como Web App</h3>
+                <p>1. Haz clic en "Implementar" → "Nueva implementación"</p>
+                <p>2. Tipo: "Aplicación web"</p>
+                <p>3. Ejecutar como: "Yo"</p>
+                <p>4. Acceso: "Cualquier persona"</p>
+                <p>5. Haz clic en "Implementar"</p>
+                <p>6. <strong>Copia la URL de la aplicación web</strong></p>
+            </div>
+
+            <div class="step">
+                <h3>🔧 Paso 3: Configurar URL en NutriPro</h3>
+                <input type="text" id="appsScriptUrl" placeholder="Pega aquí la URL de Google Apps Script" class="search-input">
+                <button class="btn btn-primary" onclick="saveAppsScriptUrl()">💾 Guardar Configuración</button>
+            </div>
+        </div>
+
         <!-- Mensaje de Bienvenida -->
         <div id="welcomeMessage" class="welcome-message" style="display: none;">
             <h2>🎉 ¡Aplicación Lista!</h2>
-            <p>La conexión con Google Sheets está preconfigurada y funcionando correctamente.</p>
+            <p>La conexión con Google Sheets está configurada y funcionando correctamente.</p>
             <button class="btn btn-sync" onclick="performInitialSync()">🔄 Sincronizar Datos Iniciales</button>
         </div>
 
-        <!-- Sección de Configuración (ahora oculta por defecto) -->
+        <!-- Sección de Configuración -->
         <section id="setup" class="section">
             <h2>📋 Configuración de Google Sheets</h2>
             <div class="setup-section">
-                <div class="status-good">
-                    <strong>✅ Configuración Preestablecida</strong><br>
-                    La aplicación está preconfigurada con tu Google Sheets. No necesitas configurar nada adicional.
+                <div id="configurationStatus">
+                    <div class="warning">
+                        <strong>⚠️ Configuración Pendiente</strong><br>
+                        Configura Google Apps Script para sincronizar con Google Sheets.
+                    </div>
                 </div>
                 
                 <div class="setup-steps">
@@ -578,7 +693,8 @@
                         <h3>📊 Estado Actual</h3>
                         <p><strong>Google Sheets ID:</strong> 1P3mTcZ944yI_cj-vsyCTi3MQUnxk9KTjRwVfjwUXapc</p>
                         <p><strong>API Key:</strong> Configurada ✅</p>
-                        <p><strong>Estado:</strong> <span id="configStatus">Verificando...</span></p>
+                        <p><strong>Apps Script URL:</strong> <span id="currentAppsScriptUrl">No configurada</span></p>
+                        <p><strong>Estado:</strong> <span id="configStatus">Pendiente de configuración</span></p>
                     </div>
 
                     <div class="step">
@@ -591,7 +707,7 @@
                     </div>
 
                     <div class="step">
-                        <h3>🔍 Estructura de tu Google Sheet</h3>
+                        <h3>📝 Estructura de tu Google Sheet</h3>
                         <p>Asegúrate de que tu Google Sheets tenga estas 3 pestañas:</p>
                         
                         <h4>📋 Pestaña "Alimentos" (Fila 1):</h4>
@@ -726,7 +842,8 @@
         let sheetsConfig = {
             apiKey: 'AIzaSyALQzsgZ_ydwVmsNJ328-Py2W5RNhZj7jY',
             sheetId: '1P3mTcZ944yI_cj-vsyCTi3MQUnxk9KTjRwVfjwUXapc',
-            isConfigured: true
+            isConfigured: false, // Cambiado a false hasta configurar Apps Script
+            appsScriptUrl: '' // Nueva configuración para Apps Script
         };
 
         let currentFoods = [];
@@ -849,14 +966,10 @@
 
         // Inicializar la app
         function initApp() {
-            console.log('🚀 Inicializando NutriPro con configuración preestablecida...');
+            console.log('🚀 Inicializando NutriPro...');
             
-            // Guardar configuración preestablecida
-            try {
-                localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
-            } catch (error) {
-                console.warn('No se pudo guardar la configuración en localStorage:', error);
-            }
+            // Cargar configuración guardada
+            loadConfiguration();
             
             loadInitialFoods();
             setupEventListeners();
@@ -864,87 +977,74 @@
             loadPatients();
             updateSyncStatus();
             
-            // Verificar conexión automáticamente
+            // Verificar configuración
             setTimeout(() => {
-                autoVerifyConnection();
+                checkConfiguration();
             }, 1000);
         }
 
-        // Verificación automática de conexión
-        async function autoVerifyConnection() {
-            console.log('🔍 Verificando conexión automáticamente...');
-            
+        // Cargar configuración desde localStorage
+        function loadConfiguration() {
             try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}?key=${sheetsConfig.apiKey}`;
-                const response = await fetch(url);
-                
-                if (response.ok) {
-                    console.log('✅ Conexión exitosa con Google Sheets');
-                    document.getElementById('configStatus').innerHTML = '<span style="color: #28a745;">✅ Conectado correctamente</span>';
-                    document.getElementById('welcomeMessage').style.display = 'block';
-                    
-                    // Auto-sincronizar si no hay datos locales
-                    const savedFoods = localStorage.getItem('nutripro-foods');
-                    const savedPatients = localStorage.getItem('nutripro-patients');
-                    
-                    if (!savedFoods || JSON.parse(savedFoods).length <= 2) {
-                        console.log('🔄 Auto-sincronizando alimentos...');
-                        setTimeout(() => syncFoodsFromSheets(), 2000);
-                    }
-                    
-                    if (!savedPatients || JSON.parse(savedPatients).length === 0) {
-                        console.log('👥 Auto-sincronizando pacientes...');
-                        setTimeout(() => syncPatientsFromSheets(), 3000);
-                    }
-                } else {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                const saved = localStorage.getItem('nutripro-config');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    sheetsConfig = { ...sheetsConfig, ...config };
                 }
             } catch (error) {
-                console.error('❌ Error de conexión:', error);
-                document.getElementById('configStatus').innerHTML = '<span style="color: #dc3545;">❌ Error de conexión</span>';
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="warning">⚠️ No se pudo conectar a Google Sheets. Verifica que el documento sea público y que la API Key sea válida.</div>';
+                console.warn('Error loading configuration:', error);
             }
         }
 
-        // Sincronización completa
-        async function performFullSync() {
-            showLoading(true);
-            document.getElementById('connectionStatus').innerHTML = 
-                '<div class="warning">🔄 Realizando sincronización completa...</div>';
+        // Guardar URL de Google Apps Script
+        function saveAppsScriptUrl() {
+            const url = document.getElementById('appsScriptUrl').value.trim();
+            if (!url) {
+                alert('Por favor ingresa la URL de Google Apps Script');
+                return;
+            }
+
+            if (!url.includes('script.google.com') && !url.includes('script.googleusercontent.com')) {
+                alert('La URL debe ser de Google Apps Script (script.google.com o script.googleusercontent.com)');
+                return;
+            }
+
+            sheetsConfig.appsScriptUrl = url;
+            sheetsConfig.isConfigured = true;
             
+            // Guardar configuración
             try {
-                await syncFoodsFromSheets();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                await syncPatientsFromSheets();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                await syncConsultationsFromSheets();
-                
-                showLoading(false);
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="success">✅ Sincronización completa exitosa</div>';
+                localStorage.setItem('nutripro-config', JSON.stringify(sheetsConfig));
             } catch (error) {
-                showLoading(false);
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="error">❌ Error en sincronización completa</div>';
-                console.error('Full sync error:', error);
+                console.warn('Error saving configuration:', error);
             }
+
+            // Actualizar UI
+            updateSyncStatus();
+            checkConfiguration();
+            
+            alert('✅ Configuración guardada correctamente');
         }
 
-        // Sincronización inicial desde el mensaje de bienvenida
-        async function performInitialSync() {
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = '🔄 Sincronizando...';
-            button.disabled = true;
-            
-            await performFullSync();
-            
-            button.textContent = originalText;
-            button.disabled = false;
-            document.getElementById('welcomeMessage').style.display = 'none';
+        // Verificar configuración
+        function checkConfiguration() {
+            if (sheetsConfig.appsScriptUrl && sheetsConfig.isConfigured) {
+                // Configuración completa
+                document.getElementById('setupInstructions').style.display = 'none';
+                document.getElementById('welcomeMessage').style.display = 'block';
+                document.getElementById('configurationStatus').innerHTML = 
+                    '<div class="success"><strong>✅ Configuración Completa</strong><br>Google Apps Script configurado correctamente.</div>';
+                document.getElementById('currentAppsScriptUrl').textContent = sheetsConfig.appsScriptUrl;
+                document.getElementById('configStatus').innerHTML = '<span style="color: #28a745;">✅ Configurado correctamente</span>';
+            } else {
+                // Configuración pendiente
+                document.getElementById('setupInstructions').style.display = 'block';
+                document.getElementById('welcomeMessage').style.display = 'none';
+                document.getElementById('configurationStatus').innerHTML = 
+                    '<div class="warning"><strong>⚠️ Configuración Pendiente</strong><br>Configura Google Apps Script para sincronizar con Google Sheets.</div>';
+                document.getElementById('currentAppsScriptUrl').textContent = 'No configurada';
+                document.getElementById('configStatus').innerHTML = '<span style="color: #dc3545;">❌ Pendiente de configuración</span>';
+            }
         }
 
         // Actualizar estado de sincronización
@@ -952,12 +1052,233 @@
             const indicator = document.getElementById('syncIndicator');
             const status = document.getElementById('syncStatus');
             
-            if (sheetsConfig.isConfigured) {
+            if (sheetsConfig.isConfigured && sheetsConfig.appsScriptUrl) {
                 indicator.classList.add('connected');
-                status.textContent = 'Conectado a Google Sheets (Preconfigurado)';
+                status.textContent = 'Conectado a Google Sheets (Apps Script)';
             } else {
                 indicator.classList.remove('connected');
-                status.textContent = 'Desconectado de Google Sheets';
+                status.textContent = 'Configuración pendiente';
+            }
+        }
+
+        // FUNCIÓN PRINCIPAL CORREGIDA PARA GUARDAR DATOS VÍA APPS SCRIPT
+        async function sendToAppsScript(type, data) {
+            if (!sheetsConfig.appsScriptUrl) {
+                throw new Error('Google Apps Script no configurado');
+            }
+
+            console.log(`📤 Enviando ${type} a Google Apps Script:`, data);
+
+            const response = await fetch(sheetsConfig.appsScriptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: type,
+                    [type]: data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido en Apps Script');
+            }
+
+            return result;
+        }
+
+        // FUNCIÓN CORREGIDA PARA GUARDAR PACIENTE EN GOOGLE SHEETS VÍA APPS SCRIPT
+        async function savePatientToSheets(patient) {
+            try {
+                console.log('👥 Guardando paciente via Apps Script:', patient);
+                const result = await sendToAppsScript('patient', patient);
+                console.log('✅ Paciente guardado exitosamente:', result);
+                return true;
+            } catch (error) {
+                console.error('❌ Error guardando paciente via Apps Script:', error);
+                throw error;
+            }
+        }
+
+        // FUNCIÓN CORREGIDA PARA GUARDAR CONSULTA EN GOOGLE SHEETS VÍA APPS SCRIPT
+        async function saveConsultationToSheets(consultation) {
+            try {
+                console.log('📊 Guardando consulta via Apps Script:', consultation);
+                const result = await sendToAppsScript('consultation', consultation);
+                console.log('✅ Consulta guardada exitosamente:', result);
+                return true;
+            } catch (error) {
+                console.error('❌ Error guardando consulta via Apps Script:', error);
+                throw error;
+            }
+        }
+
+        // FUNCIÓN PRINCIPAL CORREGIDA PARA GUARDAR PACIENTE
+        async function savePatient() {
+            const name = document.getElementById('patientName').value.trim();
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+
+            const patient = {
+                id: Date.now(),
+                name: name,
+                age: parseInt(document.getElementById('patientAge').value) || null,
+                gender: document.getElementById('patientGender').value || null,
+                weight: parseFloat(document.getElementById('patientWeight').value) || null,
+                height: parseFloat(document.getElementById('patientHeight').value) || null,
+                conditions: document.getElementById('patientConditions').value.trim() || null,
+                createdAt: new Date().toLocaleDateString('es-MX')
+            };
+
+            console.log('💾 Guardando paciente:', patient);
+            showLoading(true);
+
+            try {
+                // Guardar localmente primero (SIEMPRE funciona)
+                patients.push(patient);
+                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+                console.log('✅ Paciente guardado localmente');
+
+                // Intentar guardar en Google Sheets via Apps Script
+                if (sheetsConfig.isConfigured && sheetsConfig.appsScriptUrl) {
+                    try {
+                        await savePatientToSheets(patient);
+                        console.log('✅ Paciente sincronizado con Google Sheets');
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="success">✅ Paciente guardado y sincronizado con Google Sheets</div>';
+                    } catch (sheetsError) {
+                        console.error('⚠️ Error sincronizando con Google Sheets:', sheetsError);
+                        document.getElementById('connectionStatus').innerHTML = 
+                            '<div class="warning">⚠️ Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets: ' + sheetsError.message + '</div>';
+                    }
+                } else {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="warning">⚠️ Paciente guardado localmente. Configura Google Apps Script para sincronizar con Google Sheets.</div>';
+                }
+
+                showLoading(false);
+                cancelNewPatient();
+                displayPatients();
+                alert(`✅ Paciente ${name} agregado correctamente`);
+
+            } catch (error) {
+                showLoading(false);
+                console.error('❌ Error crítico guardando paciente:', error);
+                alert(`Error al guardar el paciente: ${error.message}`);
+            }
+        }
+
+        // FUNCIÓN CORREGIDA PARA GUARDAR CONSULTA
+        async function saveCalculationWithPatient() {
+            let patientToUse = null;
+
+            if (selectedPatientForCalculation === 'new') {
+                // Crear nuevo paciente
+                const name = document.getElementById('modalPatientName').value.trim();
+                if (!name) {
+                    alert('El nombre del paciente es obligatorio');
+                    return;
+                }
+
+                const newPatient = {
+                    id: Date.now(),
+                    name: name,
+                    age: parseInt(document.getElementById('modalPatientAge').value) || null,
+                    gender: document.getElementById('modalPatientGender').value || null,
+                    weight: parseFloat(document.getElementById('modalPatientWeight').value) || null,
+                    height: parseFloat(document.getElementById('modalPatientHeight').value) || null,
+                    conditions: document.getElementById('modalPatientConditions').value.trim() || null,
+                    createdAt: new Date().toLocaleDateString('es-MX')
+                };
+
+                // Guardar paciente localmente
+                patients.push(newPatient);
+                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
+
+                // Intentar guardar en Google Sheets
+                if (sheetsConfig.isConfigured && sheetsConfig.appsScriptUrl) {
+                    try {
+                        await savePatientToSheets(newPatient);
+                        console.log('✅ Nuevo paciente sincronizado con Google Sheets');
+                    } catch (error) {
+                        console.error('⚠️ Error saving new patient to sheets:', error);
+                        // No mostramos error aquí porque el guardado local funcionó
+                    }
+                }
+
+                patientToUse = newPatient;
+                displayPatients(); // Actualizar la lista de pacientes
+            } else {
+                patientToUse = selectedPatientForCalculation;
+            }
+
+            if (!patientToUse) {
+                alert('Selecciona un paciente válido');
+                return;
+            }
+
+            // Calcular totales nutricionales
+            const totals = selectedFoods.reduce((acc, food) => {
+                const factor = food.grams / 100;
+                acc.calories += (food.energia * factor);
+                acc.proteins += (food.proteina * factor);
+                acc.lipids += (food.lipidos * factor);
+                acc.carbs += (food.hidratosCarbono * factor);
+                acc.fiber += (food.fibra * factor);
+                return acc;
+            }, { calories: 0, proteins: 0, lipids: 0, carbs: 0, fiber: 0 });
+
+            const consultation = {
+                id: Date.now(),
+                patientName: patientToUse.name,
+                date: new Date().toLocaleDateString('es-MX'),
+                foodsText: selectedFoods.map(f => f.name).join(', '),
+                quantitiesText: selectedFoods.map(f => `${f.grams}g`).join(', '),
+                totalCalories: totals.calories.toFixed(1),
+                totalProteins: totals.proteins.toFixed(1),
+                totalLipids: totals.lipids.toFixed(1),
+                totalCarbs: totals.carbs.toFixed(1),
+                totalFiber: totals.fiber.toFixed(1),
+                notes: '',
+                foods: [...selectedFoods], // Mantener estructura detallada para compatibilidad
+                timestamp: new Date().toISOString()
+            };
+
+            // Guardar consulta localmente
+            try {
+                let consultations = JSON.parse(localStorage.getItem('nutripro-consultations') || '[]');
+                consultations.push(consultation);
+                localStorage.setItem('nutripro-consultations', JSON.stringify(consultations));
+                console.log('📊 Consulta guardada localmente');
+            } catch (error) {
+                console.error('❌ Error saving consultation locally:', error);
+            }
+
+            // Intentar guardar en Google Sheets
+            if (sheetsConfig.isConfigured && sheetsConfig.appsScriptUrl) {
+                try {
+                    await saveConsultationToSheets(consultation);
+                    console.log('✅ Consulta sincronizada con Google Sheets');
+                } catch (error) {
+                    console.error('⚠️ Error saving consultation to sheets:', error);
+                    // Continuamos sin mostrar error porque el guardado local funcionó
+                }
+            }
+
+            closeSaveModal();
+            alert(`✅ Cálculo guardado exitosamente para ${patientToUse.name}`);
+            
+            // Limpiar calculadora opcional
+            if (confirm('¿Deseas limpiar la calculadora para comenzar un nuevo cálculo?')) {
+                clearCalculator();
             }
         }
 
@@ -1007,67 +1328,84 @@
             }
         }
 
-        // Función de prueba de conexión mejorada
+        // Función de prueba de conexión
         async function testConnection() {
             showLoading(true);
             
             try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}?key=${sheetsConfig.apiKey}`;
-                
-                const response = await fetch(url);
+                if (!sheetsConfig.appsScriptUrl) {
+                    throw new Error('Google Apps Script no configurado');
+                }
+
+                // Test básico de conexión con Apps Script
+                const response = await fetch(sheetsConfig.appsScriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'test',
+                        test: { message: 'test connection' }
+                    })
+                });
+
                 showLoading(false);
                 
                 if (response.ok) {
-                    const data = await response.json();
                     document.getElementById('connectionStatus').innerHTML = 
-                        `<div class="success">✅ Conexión exitosa con "${data.properties.title}"</div>`;
-                    document.getElementById('configStatus').innerHTML = '<span style="color: #28a745;">✅ Conectado correctamente</span>';
+                        '<div class="success">✅ Conexión exitosa con Google Apps Script</div>';
                 } else {
                     throw new Error(`Error ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
                 showLoading(false);
                 document.getElementById('connectionStatus').innerHTML = 
-                    '<div class="error">❌ Error de conexión. Verifica que el documento sea público y que la API Key sea válida</div>';
-                document.getElementById('configStatus').innerHTML = '<span style="color: #dc3545;">❌ Error de conexión</span>';
+                    '<div class="error">❌ Error de conexión: ' + error.message + '</div>';
                 console.error('Connection error:', error);
             }
         }
 
-        // FUNCIÓN CORREGIDA PARA AGREGAR DATOS A GOOGLE SHEETS
-        async function appendToSheet(sheetName, values) {
-            console.log(`📝 Agregando datos a hoja: ${sheetName}`, values);
+        // Sincronización completa
+        async function performFullSync() {
+            showLoading(true);
+            document.getElementById('connectionStatus').innerHTML = 
+                '<div class="warning">🔄 Realizando sincronización completa...</div>';
             
             try {
-                // Usar la API correcta para append (agregar datos al final)
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${sheetName}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${sheetsConfig.apiKey}`;
+                await syncFoodsFromSheets();
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        values: values
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Google Sheets API Error:', errorData);
-                    throw new Error(errorData.error?.message || `Error HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                console.log(`✅ Datos guardados exitosamente en Google Sheets (${sheetName}):`, result);
-                return result;
+                await syncPatientsFromSheets();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await syncConsultationsFromSheets();
+                
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="success">✅ Sincronización completa exitosa</div>';
             } catch (error) {
-                console.error(`❌ Error guardando en ${sheetName}:`, error);
-                throw error;
+                showLoading(false);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<div class="error">❌ Error en sincronización completa</div>';
+                console.error('Full sync error:', error);
             }
         }
 
-        // Sincronizar alimentos desde Google Sheets - MEJORADA
+        // Sincronización inicial desde el mensaje de bienvenida
+        async function performInitialSync() {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '🔄 Sincronizando...';
+            button.disabled = true;
+            
+            await performFullSync();
+            
+            button.textContent = originalText;
+            button.disabled = false;
+            document.getElementById('welcomeMessage').style.display = 'none';
+        }
+
+        // Sincronizar alimentos desde Google Sheets
         async function syncFoodsFromSheets() {
             console.log('🔄 Iniciando sincronización de alimentos...');
             showLoading(true);
@@ -1095,71 +1433,6 @@
                 const rows = data.values.slice(1);
                 
                 console.log(`📊 Procesando ${rows.length} alimentos...`);
-                
-                // Convertir datos de Google Sheets a formato de la app
-                const syncedFoods = rows.map(row => {
-                    const food = {};
-                    headers.forEach((header, index) => {
-                        const propName = FOOD_HEADERS[header.trim()];
-                        if (propName) {
-                            const value = row[index] || '';
-                            // Convertir números
-                            if (propName !== 'name' && propName !== 'unidad' && propName !== 'cantidadSugerida') {
-                                food[propName] = parseFloat(value) || 0;
-                            } else {
-                                food[propName] = value.toString().trim();
-                            }
-                        }
-                    });
-                    return food;
-                }).filter(food => food.name && food.name.trim() !== '');
-                
-                currentFoods = syncedFoods;
-                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
-                
-                showLoading(false);
-                console.log(`✅ ${currentFoods.length} alimentos sincronizados correctamente`);
-                document.getElementById('connectionStatus').innerHTML = 
-                    `<div class="success">✅ Sincronización exitosa: ${currentFoods.length} alimentos cargados</div>`;
-                
-            } catch (error) {
-                showLoading(false);
-                console.error('❌ Error de sincronización de alimentos:', error);
-                document.getElementById('connectionStatus').innerHTML = 
-                    `<div class="error">❌ Error de sincronización de alimentos: ${error.message}</div>`;
-            }
-        }
-
-        // FUNCIÓN CORREGIDA PARA SINCRONIZAR PACIENTES
-        async function syncPatientsFromSheets() {
-            console.log('👥 Iniciando sincronización de pacientes...');
-            showLoading(true);
-            
-            try {
-                const range = 'Pacientes!A:H';
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
-                
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data.values || data.values.length < 1) {
-                    console.log('📝 Creando headers de pacientes...');
-                    await createPatientsHeaders();
-                    showLoading(false);
-                    document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="success">✅ Hoja Pacientes inicializada correctamente</div>';
-                    return;
-                }
-                
-                const headers = data.values[0];
-                console.log('📋 Headers encontrados:', headers);
-                
-                const rows = data.values.slice(1);
-                console.log(`👥 Procesando ${rows.length} pacientes...`);
                 
                 // Convertir datos de Google Sheets a formato de la app
                 const syncedPatients = rows.map((row, index) => {
@@ -1197,23 +1470,7 @@
             }
         }
 
-        // FUNCIÓN CORREGIDA PARA CREAR HEADERS DE PACIENTES
-        async function createPatientsHeaders() {
-            console.log('📋 Creando headers en la hoja Pacientes...');
-            const headers = Object.keys(PATIENT_HEADERS);
-            console.log('📝 Headers a crear:', headers);
-            
-            try {
-                await appendToSheet('Pacientes', [headers]);
-                console.log('✅ Headers de Pacientes creados exitosamente');
-                return true;
-            } catch (error) {
-                console.error('❌ Error creando headers de Pacientes:', error);
-                throw error;
-            }
-        }
-
-        // Sincronizar consultas desde Google Sheets - MEJORADA
+        // Sincronizar consultas desde Google Sheets
         async function syncConsultationsFromSheets() {
             console.log('📊 Iniciando sincronización de consultas...');
             showLoading(true);
@@ -1230,11 +1487,10 @@
                 const data = await response.json();
                 
                 if (!data.values || data.values.length < 1) {
-                    console.log('📝 Creando headers de consultas...');
-                    await createConsultationsHeaders();
+                    console.log('📊 No hay datos en la hoja Consultas');
                     showLoading(false);
                     document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="success">✅ Hoja Consultas inicializada correctamente</div>';
+                        '<div class="success">✅ Hoja Consultas verificada (sin datos previos)</div>';
                     return;
                 }
                 
@@ -1276,12 +1532,6 @@
                 document.getElementById('connectionStatus').innerHTML = 
                     `<div class="error">❌ Error sincronizando consultas: ${error.message}</div>`;
             }
-        }
-
-        // Crear headers en la hoja Consultas
-        async function createConsultationsHeaders() {
-            const headers = Object.keys(CONSULTATION_HEADERS);
-            await appendToSheet('Consultas', [headers]);
         }
 
         // Funciones de alimentos
@@ -1613,161 +1863,12 @@
             document.getElementById('saveBtn').disabled = false;
         }
 
-        async function saveCalculationWithPatient() {
-            let patientToUse = null;
-
-            if (selectedPatientForCalculation === 'new') {
-                // Crear nuevo paciente
-                const name = document.getElementById('modalPatientName').value.trim();
-                if (!name) {
-                    alert('El nombre del paciente es obligatorio');
-                    return;
-                }
-
-                const newPatient = {
-                    id: Date.now(),
-                    name: name,
-                    age: parseInt(document.getElementById('modalPatientAge').value) || null,
-                    gender: document.getElementById('modalPatientGender').value || null,
-                    weight: parseFloat(document.getElementById('modalPatientWeight').value) || null,
-                    height: parseFloat(document.getElementById('modalPatientHeight').value) || null,
-                    conditions: document.getElementById('modalPatientConditions').value.trim() || null,
-                    createdAt: new Date().toLocaleDateString('es-MX')
-                };
-
-                // Guardar paciente localmente
-                patients.push(newPatient);
-                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
-
-                // Intentar guardar en Google Sheets
-                try {
-                    await savePatientToSheets(newPatient);
-                    console.log('✅ Nuevo paciente sincronizado con Google Sheets');
-                } catch (error) {
-                    console.error('⚠️ Error saving new patient to sheets:', error);
-                    // No mostramos error aquí porque el guardado local funcionó
-                }
-
-                patientToUse = newPatient;
-                displayPatients(); // Actualizar la lista de pacientes
-            } else {
-                patientToUse = selectedPatientForCalculation;
-            }
-
-            if (!patientToUse) {
-                alert('Selecciona un paciente válido');
-                return;
-            }
-
-            // Calcular totales nutricionales
-            const totals = selectedFoods.reduce((acc, food) => {
-                const factor = food.grams / 100;
-                acc.calories += (food.energia * factor);
-                acc.proteins += (food.proteina * factor);
-                acc.lipids += (food.lipidos * factor);
-                acc.carbs += (food.hidratosCarbono * factor);
-                acc.fiber += (food.fibra * factor);
-                return acc;
-            }, { calories: 0, proteins: 0, lipids: 0, carbs: 0, fiber: 0 });
-
-            const consultation = {
-                id: Date.now(),
-                patientName: patientToUse.name,
-                date: new Date().toLocaleDateString('es-MX'),
-                foodsText: selectedFoods.map(f => f.name).join(', '),
-                quantitiesText: selectedFoods.map(f => `${f.grams}g`).join(', '),
-                totalCalories: totals.calories.toFixed(1),
-                totalProteins: totals.proteins.toFixed(1),
-                totalLipids: totals.lipids.toFixed(1),
-                totalCarbs: totals.carbs.toFixed(1),
-                totalFiber: totals.fiber.toFixed(1),
-                notes: '',
-                foods: [...selectedFoods], // Mantener estructura detallada para compatibilidad
-                timestamp: new Date().toISOString()
-            };
-
-            // Guardar consulta localmente
-            try {
-                let consultations = JSON.parse(localStorage.getItem('nutripro-consultations') || '[]');
-                consultations.push(consultation);
-                localStorage.setItem('nutripro-consultations', JSON.stringify(consultations));
-                console.log('📊 Consulta guardada localmente');
-            } catch (error) {
-                console.error('❌ Error saving consultation locally:', error);
-            }
-
-            // Intentar guardar en Google Sheets
-            try {
-                await saveConsultationToSheets(consultation);
-                console.log('✅ Consulta sincronizada con Google Sheets');
-            } catch (error) {
-                console.error('⚠️ Error saving consultation to sheets:', error);
-                // Continuamos sin mostrar error porque el guardado local funcionó
-            }
-
-            closeSaveModal();
-            alert(`✅ Cálculo guardado exitosamente para ${patientToUse.name}`);
-            
-            // Limpiar calculadora opcional
-            if (confirm('¿Deseas limpiar la calculadora para comenzar un nuevo cálculo?')) {
-                clearCalculator();
-            }
-        }
-
         function closeSaveModal() {
             if (window.currentSaveModal) {
                 document.body.removeChild(window.currentSaveModal);
                 window.currentSaveModal = null;
             }
             selectedPatientForCalculation = null;
-        }
-
-        // FUNCIÓN CORREGIDA PARA GUARDAR CONSULTA EN GOOGLE SHEETS
-        async function saveConsultationToSheets(consultation) {
-            try {
-                console.log('📊 Guardando consulta en Google Sheets...', consultation);
-                
-                // Verificar si la hoja Consultas tiene headers
-                const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Consultas!1:1?key=${sheetsConfig.apiKey}`;
-                const checkResponse = await fetch(checkUrl);
-                
-                if (!checkResponse.ok) {
-                    throw new Error(`Error verificando headers: ${checkResponse.status}`);
-                }
-                
-                const checkData = await checkResponse.json();
-                
-                // Si no hay headers, crearlos
-                if (!checkData.values || checkData.values.length === 0) {
-                    const headers = Object.keys(CONSULTATION_HEADERS);
-                    await appendToSheet('Consultas', [headers]);
-                    console.log('📝 Headers de Consultas creados en Google Sheets');
-                }
-
-                // Preparar la fila de datos en el mismo orden que los headers
-                const row = [
-                    consultation.id,
-                    consultation.patientName,
-                    consultation.date,
-                    consultation.foodsText,
-                    consultation.quantitiesText,
-                    consultation.totalCalories,
-                    consultation.totalProteins,
-                    consultation.totalLipids,
-                    consultation.totalCarbs,
-                    consultation.totalFiber,
-                    consultation.notes || ''
-                ];
-
-                console.log('📝 Datos de consulta a guardar:', row);
-                await appendToSheet('Consultas', [row]);
-                console.log('✅ Consulta guardada exitosamente en Google Sheets');
-                
-                return true;
-            } catch (error) {
-                console.error('❌ Error guardando consulta en Google Sheets:', error);
-                throw error;
-            }
         }
 
         // Funciones de pacientes
@@ -1801,101 +1902,6 @@
             document.getElementById('patientWeight').value = '';
             document.getElementById('patientHeight').value = '';
             document.getElementById('patientConditions').value = '';
-        }
-
-        // FUNCIÓN PRINCIPAL CORREGIDA PARA GUARDAR PACIENTE
-        async function savePatient() {
-            const name = document.getElementById('patientName').value.trim();
-            if (!name) {
-                alert('El nombre es obligatorio');
-                return;
-            }
-
-            const patient = {
-                id: Date.now(),
-                name: name,
-                age: parseInt(document.getElementById('patientAge').value) || null,
-                gender: document.getElementById('patientGender').value || null,
-                weight: parseFloat(document.getElementById('patientWeight').value) || null,
-                height: parseFloat(document.getElementById('patientHeight').value) || null,
-                conditions: document.getElementById('patientConditions').value.trim() || null,
-                createdAt: new Date().toLocaleDateString('es-MX')
-            };
-
-            console.log('💾 Guardando paciente:', patient);
-            showLoading(true);
-
-            try {
-                // Guardar localmente primero (SIEMPRE funciona)
-                patients.push(patient);
-                localStorage.setItem('nutripro-patients', JSON.stringify(patients));
-                console.log('✅ Paciente guardado localmente');
-
-                // Intentar guardar en Google Sheets
-                try {
-                    await savePatientToSheets(patient);
-                    console.log('✅ Paciente sincronizado con Google Sheets');
-                    document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="success">✅ Paciente guardado y sincronizado con Google Sheets</div>';
-                } catch (sheetsError) {
-                    console.error('⚠️ Error sincronizando con Google Sheets:', sheetsError);
-                    document.getElementById('connectionStatus').innerHTML = 
-                        '<div class="warning">⚠️ Paciente guardado localmente, pero hubo un error al sincronizar con Google Sheets. Revisa la configuración.</div>';
-                }
-
-                showLoading(false);
-                cancelNewPatient();
-                displayPatients();
-                alert(`✅ Paciente ${name} agregado correctamente`);
-
-            } catch (error) {
-                showLoading(false);
-                console.error('❌ Error crítico guardando paciente:', error);
-                alert(`Error al guardar el paciente: ${error.message}`);
-            }
-        }
-
-        // FUNCIÓN CORREGIDA PARA GUARDAR PACIENTE EN GOOGLE SHEETS
-        async function savePatientToSheets(patient) {
-            try {
-                console.log('👥 Guardando paciente en Google Sheets:', patient);
-                
-                // Verificar si la hoja Pacientes existe y tiene headers
-                const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/Pacientes!1:1?key=${sheetsConfig.apiKey}`;
-                const checkResponse = await fetch(checkUrl);
-                
-                if (!checkResponse.ok) {
-                    console.log('📋 La hoja Pacientes no existe o no tiene headers, creándolos...');
-                    await createPatientsHeaders();
-                } else {
-                    const checkData = await checkResponse.json();
-                    if (!checkData.values || checkData.values.length === 0) {
-                        console.log('📋 Creando headers en hoja Pacientes vacía...');
-                        await createPatientsHeaders();
-                    }
-                }
-
-                // Preparar la fila de datos en el mismo orden que los headers definidos
-                const row = [
-                    patient.id,
-                    patient.name,
-                    patient.age || '',
-                    patient.gender || '',
-                    patient.weight || '',
-                    patient.height || '',
-                    patient.conditions || '',
-                    patient.createdAt
-                ];
-
-                console.log('📝 Datos de paciente a guardar:', row);
-                await appendToSheet('Pacientes', [row]);
-                console.log('✅ Paciente guardado exitosamente en Google Sheets');
-                
-                return true;
-            } catch (error) {
-                console.error('❌ Error guardando paciente en Google Sheets:', error.message);
-                throw new Error(`Error al sincronizar con Google Sheets: ${error.message}`);
-            }
         }
 
         function searchPatients(query) {
@@ -2069,9 +2075,73 @@
         🥗 NutriPro WebApp Inicializada
         📊 Google Sheets ID: ${sheetsConfig.sheetId}
         🔑 API Key configurada: ${sheetsConfig.apiKey ? 'Sí' : 'No'}
-        ✅ Estado: Preconfigurada y lista para usar
+        🚀 Apps Script URL: ${sheetsConfig.appsScriptUrl || 'Pendiente de configurar'}
+        ⚙️ Estado: ${sheetsConfig.isConfigured ? 'Configurada' : 'Requiere configuración'}
         `);
     </script>
 </body>
-</html>
+</html> syncedFoods = rows.map(row => {
+                    const food = {};
+                    headers.forEach((header, index) => {
+                        const propName = FOOD_HEADERS[header.trim()];
+                        if (propName) {
+                            const value = row[index] || '';
+                            // Convertir números
+                            if (propName !== 'name' && propName !== 'unidad' && propName !== 'cantidadSugerida') {
+                                food[propName] = parseFloat(value) || 0;
+                            } else {
+                                food[propName] = value.toString().trim();
+                            }
+                        }
+                    });
+                    return food;
+                }).filter(food => food.name && food.name.trim() !== '');
+                
+                currentFoods = syncedFoods;
+                localStorage.setItem('nutripro-foods', JSON.stringify(currentFoods));
+                
+                showLoading(false);
+                console.log(`✅ ${currentFoods.length} alimentos sincronizados correctamente`);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="success">✅ Sincronización exitosa: ${currentFoods.length} alimentos cargados</div>`;
+                
+            } catch (error) {
+                showLoading(false);
+                console.error('❌ Error de sincronización de alimentos:', error);
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<div class="error">❌ Error de sincronización de alimentos: ${error.message}</div>`;
+            }
+        }
+
+        // Sincronizar pacientes desde Google Sheets
+        async function syncPatientsFromSheets() {
+            console.log('👥 Iniciando sincronización de pacientes...');
+            showLoading(true);
             
+            try {
+                const range = 'Pacientes!A:H';
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetsConfig.sheetId}/values/${range}?key=${sheetsConfig.apiKey}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 1) {
+                    console.log('📝 No hay datos en la hoja Pacientes');
+                    showLoading(false);
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<div class="success">✅ Hoja Pacientes verificada (sin datos previos)</div>';
+                    return;
+                }
+                
+                const headers = data.values[0];
+                console.log('📋 Headers encontrados:', headers);
+                
+                const rows = data.values.slice(1);
+                console.log(`👥 Procesando ${rows.length} pacientes...`);
+                
+                // Convertir datos de Google Sheets a formato de la app
+                const
